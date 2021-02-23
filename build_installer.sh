@@ -24,7 +24,7 @@ build_openwrt() {
 	if [ -d "$OPENWRT_DIR" ]; then
 		cd "$OPENWRT_DIR"
 		git fetch "$OPENWRT_GIT_SRC" "$OPENWRT_GIT_BRANCH"
-		git checkout FETCH_HEAD
+		git checkout -f FETCH_HEAD
 	else
 		git clone ${OPENWRT_GIT_BRANCH:+-b $OPENWRT_GIT_BRANCH} https://git.openwrt.org/openwrt/staging/dangole.git "$OPENWRT_DIR"
 		cd "$OPENWRT_DIR"
@@ -122,7 +122,7 @@ unfit_image() {
 	"$UNFIT" "$INFILE"
 	DTC="$(ls -1 ${OPENWRT_DIR}/build_dir/target-aarch64_cortex-a53_musl/linux-mediatek_mt7622/linux-*/scripts/dtc/dtc)"
 
-	"$DTC" -I dtb -O dts "$INFILE" > "$ITSFILE" || exit 2
+	"$DTC" -I dtb -O dts -o "$ITSFILE" "$INFILE" || exit 2
 
 	echo "extracted successfully"
 
@@ -169,15 +169,22 @@ repack_initrd() {
 	return 0
 }
 
+allow_mtd_write() {
+	"$DTC" -I dtb -O dts -o "${WORKDIR}/fdt@1.dts" "${WORKDIR}/fdt@1"
+	rm "${WORKDIR}/fdt@1"
+	grep -v 'read-only' "${WORKDIR}/fdt@1.dts" > "${WORKDIR}/fdt@1.dts.patched"
+	"$DTC" -I dts -O dtb -o "${WORKDIR}/fdt@1" "${WORKDIR}/fdt@1.dts.patched"
+}
+
 bundle_installer() {
 	unfit_image "$@"
 	extract_initrd
 	cp -avr "${INSTALLERDIR}/files/"* "${WORKDIR}/initrd"
 	repack_initrd
+	allow_mtd_write
 	cd "${WORKDIR}"
 	refit_image 128k
 }
-
 
 linksys_e8450_installer() {
 	build_openwrt

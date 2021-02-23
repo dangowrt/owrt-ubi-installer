@@ -23,6 +23,9 @@ HAS_ENV=1
 	[ "$HAS_ENV" = "1" ] && ubimkvol /dev/ubi0 -n 0 -s 1MiB -N ubootenv && ubimkvol /dev/ubi0 -n 1 -s 1MiB -N ubootenv2
 }
 
+magic="$(hexdump -v -n 2 -e '"%02x"' /dev/mtd2)"
+[ "$magic" = "7622" ] || exit 0
+
 mtd -e /dev/mtd0 write $PRELOADER /dev/mtd0
 mtd -e /dev/mtd1 write $FIP /dev/mtd1
 
