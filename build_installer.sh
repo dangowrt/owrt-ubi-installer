@@ -56,6 +56,7 @@ build_openwrt() {
 	echo "CONFIG_PACKAGE_luci=y" >> .config
 	echo "CONFIG_PACKAGE_luci-ssl-openssl=y" >> .config
 	echo "CONFIG_PACKAGE_luci-theme-openwrt-2020=y" >> .config
+	echo "CONFIG_PACKAGE_nand-utils=y" >> .config
 	echo "CONFIG_OPENSSL_OPTIMIZE_SPEED=y" >> .config
 	echo "# CONFIG_PACKAGE_libustream-wolfssl is not set" >> .config
 	echo "# CONFIG_PACKAGE_wpad-basic-wolfssl is not set" >> .config
