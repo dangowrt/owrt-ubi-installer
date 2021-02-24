@@ -40,7 +40,7 @@ install_fix_factory() {
 
 	echo "found factory partition at offset $off, fixing."
 	dd if=$mtddev bs=$ebs skip=$skip count=1 of=/tmp/factory-fixed
-	mtd write /tmp/factory-fixed $mtddev6
+	mtd write /tmp/factory-fixed $mtddev
 	local magic="$(hexdump -v -n 2 -e '"%02x"' $mtddev)"
 	[ "$magic" = "7622" ] || exit 1
 }
@@ -48,22 +48,25 @@ install_fix_factory() {
 install_fix_macpart() {
 	local mtddev=$1
 	local blockoff=$2
-	local skip=0
 	local macoff=$3
 	local destoff=$blockoff
 	local ebs=$(cat /sys/class/mtd/$(basename $mtddev)/erasesize)
+	local skip=$((blockoff / ebs))
 	local readp1 readp2
 	local found
 
 	while [ $((blockoff)) -le $((destoff + (2 * ebs))) ]; do
 		readp1=$(hexdump -s $((blockoff + macoff)) -v -n 3 -e '3/1 "%02x"' /dev/mtd2)
 		readp2=$(hexdump -s $((blockoff + macoff + 6)) -v -n 3 -e '3/1 "%02x"' /dev/mtd2)
-		if [ "$readp1" = "ffffff" -o "$readp1" = "000000" ]; then
+		# that doesn't look valid to beging with...
+		if [ "$readp1" = "000000" ] ||
+		   [ "${readp1:0:2}" = "f0" ] ||
+		   [ "$((((0x${readp1:0:2})>>2)<<2))" != "$((0x${readp1:0:2}))" ]; then
 			blockoff=$((blockoff + ebs))
 			skip=$((skip + 1))
 			continue
 		fi
-		# non empty and contains two something which looks like it
+		# could be valid and contains two identical 3-bytes prefixes
 		if [ "$readp1" = "$readp2" ]; then
 			found=1
 			break
@@ -81,7 +84,7 @@ install_fix_macpart() {
 
 	echo "found mac addresses shifted by 0x$(printf %08x $((blockoff - destoff))), fixing."
 	dd if=$mtddev bs=$ebs skip=$skip count=1 of=/tmp/macs-fixed
-	mtd -p $destoff -l $ebs write /tmp/factory-fixed $mtddev
+	mtd -p $destoff -l $ebs write /tmp/macs-fixed $mtddev
 }
 
 install_prepare_backup() {
