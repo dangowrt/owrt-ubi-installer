@@ -18,6 +18,7 @@ HAS_ENV=1
 
 install_fix_factory() {
 	local mtddev=$1
+	local assertm=$2
 	local ebs=$(cat /sys/class/mtd/$(basename $mtddev)/erasesize)
 	local off=0
 	local skip=0
@@ -25,7 +26,7 @@ install_fix_factory() {
 
 	while [ $((off)) -lt $((2 * ebs)) ]; do
 		magic="$(hexdump -v -s $off -n 2 -e '"%02x"' $1)"
-		if [ "$magic" = "7622" ]; then
+		if [ "$magic" = "$assertm" ]; then
 			found=1
 			break
 		fi
@@ -38,11 +39,17 @@ install_fix_factory() {
 		exit 1
 	fi
 
-	echo "found factory partition at offset $off, fixing."
+	echo -n "found factory partition at offset $(printf %08x $((off))), "
+	if [ $((off)) -eq 0 ]; then
+		echo "ok."
+		return
+	fi
+
+	echo "fixing..."
 	dd if=$mtddev bs=$ebs skip=$skip count=1 of=/tmp/factory-fixed
 	mtd write /tmp/factory-fixed $mtddev
 	local magic="$(hexdump -v -n 2 -e '"%02x"' $mtddev)"
-	[ "$magic" = "7622" ] || exit 1
+	[ "$magic" = "$assertm" ] || exit 1
 }
 
 install_fix_macpart() {
@@ -56,18 +63,21 @@ install_fix_macpart() {
 	local found
 
 	while [ $((blockoff)) -le $((destoff + (2 * ebs))) ]; do
-		readp1=$(hexdump -s $((blockoff + macoff)) -v -n 3 -e '3/1 "%02x"' /dev/mtd2)
-		readp2=$(hexdump -s $((blockoff + macoff + 6)) -v -n 3 -e '3/1 "%02x"' /dev/mtd2)
+		readm1=$(hexdump -s $((blockoff + macoff)) -v -n 6 -e '6/1 "%02x"' /dev/mtd2)
+		readm2=$(hexdump -s $((blockoff + macoff + 6)) -v -n 6 -e '6/1 "%02x"' /dev/mtd2)
 		# that doesn't look valid to beging with...
-		if [ "$readp1" = "000000" ] ||
-		   [ "${readp1:0:2}" = "f0" ] ||
-		   [ "$((((0x${readp1:0:2})>>2)<<2))" != "$((0x${readp1:0:2}))" ]; then
+		if [ "${readm1:0:6}" = "000000" ] ||
+		   [ "${readm1:0:2}" = "f0" ] ||
+		   [ "$((((0x${readm1:0:2})>>2)<<2))" != "$((0x${readm1:0:2}))" ]; then
 			blockoff=$((blockoff + ebs))
 			skip=$((skip + 1))
 			continue
 		fi
 		# could be valid and contains two identical 3-bytes prefixes
-		if [ "$readp1" = "$readp2" ]; then
+		if [ "${readm1:0:6}" = "${readm2:0:6}" ]; then
+			echo -n "Found MAC addresses block"
+			echo -n " LAN: ${readm1:0:2}:${readm1:2:2}:${readm1:4:2}:${readm1:6:2}:${readm1:8:2}:${readm1:10:2}"
+			echo    " WAN: ${readm2:0:2}:${readm2:2:2}:${readm2:4:2}:${readm2:6:2}:${readm2:8:2}:${readm2:10:2}"
 			found=1
 			break
 		fi
@@ -82,7 +92,7 @@ install_fix_macpart() {
 
 	[ $((blockoff)) -eq $((destoff)) ] && return
 
-	echo "found mac addresses shifted by 0x$(printf %08x $((blockoff - destoff))), fixing."
+	echo "mac addresses block shifted by 0x$(printf %08x $((blockoff - destoff))), fixing."
 	dd if=$mtddev bs=$ebs skip=$skip count=1 of=/tmp/macs-fixed
 	mtd -p $destoff -l $ebs write /tmp/macs-fixed $mtddev
 }
@@ -126,8 +136,7 @@ install_prepare_backup 2
 install_fix_macpart /dev/mtd2 0x60000 0x1fff4
 
 # make sure wifi eeprom starts at correct offset
-magic="$(hexdump -v -n 2 -e '"%02x"' /dev/mtd2)"
-[ "$magic" = "7622" ] || install_fix_factory /dev/mtd2
+install_fix_factory /dev/mtd2 "7622"
 
 echo "redundantly write bl2 into the first 4 blocks"
 for bl2start in 0x0 0x20000 0x40000 0x60000 ; do
