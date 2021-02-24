@@ -2,6 +2,8 @@
 
 . /lib/upgrade/nand.sh
 
+sleep 1
+
 echo
 echo OpenWrt UBI installer
 echo
@@ -78,9 +80,9 @@ install_fix_macpart() {
 install_prepare_backup() {
 	echo "preparing backup of relevant flash areas..."
 	mkdir /tmp/backup
-	nanddump -n -o -f /tmp/backup/mtd0.oob /dev/mtd0
-	nanddump -n -o -f /tmp/backup/mtd1.oob /dev/mtd1
-	nanddump -n -o -f /tmp/backup/mtd2.oob /dev/mtd2
+	for mtdnum in $(seq 0 $1); do
+		nanddump -n -o -f /tmp/backup/mtd${mtdnum}.raw /dev/mtd${mtdnum}
+	done
 }
 
 install_write_backup() {
@@ -92,19 +94,22 @@ install_write_backup() {
 }
 
 install_prepare_ubi() {
-	ubiformat -y /dev/mtd3
-	ubiattach -p /dev/mtd3
+	mtddev=$1
+	[ -e /sys/class/ubi/ubi0 ] && ubidetach -p $mtddev
+	ubiformat -y $mtddev
+	ubiattach -p $mtddev
 	sync
 	sleep 1
 	[ -e /sys/class/ubi/ubi0 ] || exit 1
-	mknod /dev/ubi0 c 250 0
+	[ -e /dev/ubi0 ] || mknod /dev/ubi0 c 250 0
 	[ "$HAS_ENV" = "1" ] && ubimkvol /dev/ubi0 -n 0 -s 1MiB -N ubootenv && ubimkvol /dev/ubi0 -n 1 -s 1MiB -N ubootenv2
 }
 
 # Linksys E8450 got factory data in /dev/mtd2
 # things may be shifted due to MTK BMT/BBT being used previously, fix that
 
-install_prepare_backup
+# backup mtd0...mtd2
+install_prepare_backup 2
 
 # make sure two mac addresses are store at correct offset in factory
 install_fix_macpart /dev/mtd2 0x60000 0x1fff4
@@ -121,7 +126,7 @@ done
 echo "write FIP to NAND while skipping bad blocks"
 nandwrite -p -m /dev/mtd1 $FIP
 
-[ -e /sys/class/ubi/ubi0 ] || install_prepare_ubi
+install_prepare_ubi /dev/mtd3
 
 echo "write recovery ubi volume"
 RECOVERY_SIZE=$(cat $RECOVERY | wc -c)
