@@ -20,15 +20,17 @@ install_fix_factory() {
 	local mtddev=$1
 	local ebs=$(cat /sys/class/mtd/$(basename $mtddev)/erasesize)
 	local off=0
+	local skip=0
 	local found
 
 	while [ $((off)) -lt $((2 * ebs)) ]; do
 		magic="$(hexdump -v -s $off -n 2 -e '"%02x"' $1)"
-		[ "$magic" = "7622" ] && {
+		if [ "$magic" = "7622" ]; then
 			found=1
-			break;
-		}
+			break
+		fi
 		off=$((off + ebs))
+		skip=$((skip + 1))
 	done
 
 	if ! [ "$found" = "1" ]; then
@@ -37,13 +39,16 @@ install_fix_factory() {
 	fi
 
 	echo "found factory partition at offset $off, fixing."
-	nanddump -l $ebs -f /tmp/factory -s $off $mtddev
-	nandwrite -m -s 0 $mtddev /tmp/factory
+	dd if=$mtddev bs=$ebs skip=$skip count=1 of=/tmp/factory-fixed
+	mtd write /tmp/factory-fixed $mtddev6
+	local magic="$(hexdump -v -n 2 -e '"%02x"' $mtddev)"
+	[ "$magic" = "7622" ] || exit 1
 }
 
 install_fix_macpart() {
 	local mtddev=$1
 	local blockoff=$2
+	local skip=0
 	local macoff=$3
 	local destoff=$blockoff
 	local ebs=$(cat /sys/class/mtd/$(basename $mtddev)/erasesize)
@@ -55,6 +60,7 @@ install_fix_macpart() {
 		readp2=$(hexdump -s $((blockoff + macoff + 6)) -v -n 3 -e '3/1 "%02x"' /dev/mtd2)
 		if [ "$readp1" = "ffffff" -o "$readp1" = "000000" ]; then
 			blockoff=$((blockoff + ebs))
+			skip=$((skip + 1))
 			continue
 		fi
 		# non empty and contains two something which looks like it
@@ -62,6 +68,7 @@ install_fix_macpart() {
 			found=1
 			break
 		fi
+		skip=$((skip + 1))
 		blockoff=$((blockoff + ebs))
 	done
 
@@ -73,15 +80,16 @@ install_fix_macpart() {
 	[ $((blockoff)) -eq $((destoff)) ] && return
 
 	echo "found mac addresses shifted by 0x$(printf %08x $((blockoff - destoff))), fixing."
-	nanddump -l $ebs -f /tmp/macaddrs -s $blockoff $mtddev
-	nandwrite -m $mtddev -s $destoff /tmp/macaddrs
+	dd if=$mtddev bs=$ebs skip=$skip count=1 of=/tmp/macs-fixed
+	mtd -p $destoff -l $ebs write /tmp/factory-fixed $mtddev
 }
 
 install_prepare_backup() {
 	echo "preparing backup of relevant flash areas..."
 	mkdir /tmp/backup
 	for mtdnum in $(seq 0 $1); do
-		nanddump -n -o -f /tmp/backup/mtd${mtdnum}.raw /dev/mtd${mtdnum}
+		local ebs=$(cat /sys/class/mtd/mtd${mtdnum}/erasesize)
+		dd bs=$ebs if=/dev/mtd${mtdnum} of=/tmp/backup/mtd${mtdnum}
 	done
 }
 
@@ -120,11 +128,11 @@ magic="$(hexdump -v -n 2 -e '"%02x"' /dev/mtd2)"
 
 echo "redundantly write bl2 into the first 4 blocks"
 for bl2start in 0x0 0x20000 0x40000 0x60000 ; do
-	nandwrite -p -m -N -s $bl2start /dev/mtd0 $PRELOADER
+	mtd -p $bl2start write $PRELOADER /dev/mtd0
 done
 
-echo "write FIP to NAND while skipping bad blocks"
-nandwrite -p -m /dev/mtd1 $FIP
+echo "write FIP to NAND"
+mtd write $FIP /dev/mtd1
 
 install_prepare_ubi /dev/mtd3
 
