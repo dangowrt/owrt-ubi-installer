@@ -2,8 +2,8 @@
 
 DESTDIR="$PWD"
 
-OPENWRT_GIT_SRC="https://git.openwrt.org/openwrt/staging/dangole.git"
-OPENWRT_GIT_BRANCH="linksys-e8450-hackery"
+OPENWRT_GIT_SRC="https://git.openwrt.org/openwrt/openwrt.git"
+OPENWRT_GIT_BRANCH="master"
 
 INSTALLERDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 OPENWRT_DIR="${INSTALLERDIR}/openwrt-build-installer"
@@ -25,6 +25,7 @@ build_openwrt() {
 		cd "$OPENWRT_DIR"
 		git fetch "$OPENWRT_GIT_SRC" "$OPENWRT_GIT_BRANCH"
 		git checkout -f FETCH_HEAD
+		make clean
 	else
 		git clone ${OPENWRT_GIT_BRANCH:+-b $OPENWRT_GIT_BRANCH} https://git.openwrt.org/openwrt/staging/dangole.git "$OPENWRT_DIR"
 		cd "$OPENWRT_DIR"
@@ -114,7 +115,7 @@ its_add_data() {
 
 unfit_image() {
 	INFILE="$1"
-	FILEBASE="$(basename "$INFILE" .fit)"
+	FILEBASE="$(basename "$INFILE" .itb)"
 	WORKDIR="$(mktemp -d)"
 	ITSFILE="${WORKDIR}/image.its"
 	mkdir -p "$WORKDIR"
@@ -147,9 +148,9 @@ refit_image() {
 	[ "$EXTERNAL" = "1" ] && MKIMAGE_PARM="$MKIMAGE_PARM -E -B 0x1000"
 	[ "$STATIC" = "1" ] && MKIMAGE_PARM="$MKIMAGE_PARM -p 0x1000"
 
-	PATH="$PATH:$(dirname "$DTC")" "$MKIMAGE" $MKIMAGE_PARM -f "${ITSFILE}.new" "${FILEBASE}-refit.fit"
+	PATH="$PATH:$(dirname "$DTC")" "$MKIMAGE" $MKIMAGE_PARM -f "${ITSFILE}.new" "${FILEBASE}-refit.itb"
 
-	dd if="${FILEBASE}-refit.fit" of="${FILEBASE}-installer.fit" bs=$1 conv=sync
+	dd if="${FILEBASE}-refit.itb" of="${FILEBASE}-installer.itb" bs=$1 conv=sync
 }
 
 extract_initrd() {
@@ -193,12 +194,12 @@ linksys_e8450_installer() {
 
 	cp -v "${BINDIR}/openwrt-mediatek-mt7622-linksys_e8450-ubi-preloader.bin" "${INSTALLERDIR}/files/installer"
 	cp -v "${BINDIR}/openwrt-mediatek-mt7622-linksys_e8450-ubi-bl31-uboot.fip" "${INSTALLERDIR}/files/installer"
-	cp -v "${BINDIR}/openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.fit" "${INSTALLERDIR}/files/installer"
-	cp -v "${BINDIR}/openwrt-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.fit" "${DESTDIR}"
+	cp -v "${BINDIR}/openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb" "${INSTALLERDIR}/files/installer"
+	cp -v "${BINDIR}/openwrt-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb" "${DESTDIR}"
 
-	bundle_installer "${BINDIR}/openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.fit"
+	bundle_installer "${BINDIR}/openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
 
-	mv "${WORKDIR}/${FILEBASE}-installer.fit" "${DESTDIR}"
+	mv "${WORKDIR}/${FILEBASE}-installer.itb" "${DESTDIR}"
 	rm -r "${WORKDIR}"
 }
 
