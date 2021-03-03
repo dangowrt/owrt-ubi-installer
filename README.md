@@ -5,7 +5,7 @@ for the Linksys E8450 aka. Belkin RT3200
 (serial is RX only for documentation, only interaction is HTTP file upload)
 
 
-This script builds OpenWrt and re-packages the initramfs image to contain and installer script as well as images needed for the installation.
+This script downloads the OpenWrt ImageBuilder to generate release-like (ie. including LuCI) sysupgrade image and then goes on and re-packages the initramfs image to contain and installer script as well as images needed for the installation.
 The resulting file is suitable to be flashed by the vendor firmware Web-UI as well as non-UBI OpenWrt running on the device.
 
 **WARNING** This will replace the bootloader (TF-A 2.2, U-Boot 2020.10) and convert the flash layout of the device to UBI irreversibly!
