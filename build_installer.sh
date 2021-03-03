@@ -1,13 +1,16 @@
-#!/bin/bash
+#!/bin/bash -x
 
 DESTDIR="$PWD"
 
-OPENWRT_GIT_SRC="https://git.openwrt.org/openwrt/openwrt.git"
-OPENWRT_GIT_BRANCH="master"
+OPENWRT_PGP="0xCD84BCED626471F1"
 
 INSTALLERDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-OPENWRT_DIR="${INSTALLERDIR}/openwrt-build-installer"
+OPENWRT_DIR="${INSTALLERDIR}/openwrt-ib"
+
+CPIO="${OPENWRT_DIR}/staging_dir/host/bin/cpio"
 MKIMAGE="${OPENWRT_DIR}/staging_dir/host/bin/mkimage"
+OPKG="${OPENWRT_DIR}/staging_dir/host/bin/opkg"
+XZ="${OPENWRT_DIR}/staging_dir/host/bin/xz"
 
 UNFIT="${INSTALLERDIR}/unfit"
 [ -x "$UNFIT" ] || cc -o "$UNFIT" -lfdt "${UNFIT}.c" || {
@@ -20,50 +23,28 @@ FILEBASE=
 WORKDIR=
 ITSFILE=
 
-build_openwrt() {
-	if [ -d "$OPENWRT_DIR" ]; then
-		cd "$OPENWRT_DIR"
-		git fetch "$OPENWRT_GIT_SRC" "$OPENWRT_GIT_BRANCH"
-		git checkout -f FETCH_HEAD
-		make clean
-	else
-		git clone ${OPENWRT_GIT_BRANCH:+-b $OPENWRT_GIT_BRANCH} https://git.openwrt.org/openwrt/staging/dangole.git "$OPENWRT_DIR"
-		cd "$OPENWRT_DIR"
-	fi
-	scripts/feeds update -a
-	scripts/feeds install -a
-	echo "CONFIG_TARGET_mediatek=y" > .config
-	echo "CONFIG_TARGET_mediatek_mt7622=y" >> .config
-	echo "CONFIG_TARGET_mediatek_mt7622_DEVICE_linksys_e8450-ubi=y" >> .config
-	echo "CONFIG_TESTING_KERNEL=y" >> .config
-	echo "CONFIG_TARGET_ROOTFS_INITRAMFS=y" >> .config
-	echo "CONFIG_TARGET_INITRAMFS_COMPRESSION_XZ=y" >> .config
-	echo "CONFIG_TARGET_ROOTFS_INITRAMFS_SEPERATE=y" >> .config
-	echo "CONFIG_TARGET_ROOTFS_SQUASHFS=y" >> .config
-	echo "CONFIG_PACKAGE_blockd=y" >> .config
-	echo "# CONFIG_PACKAGE_kmod-ata-ahci-mtk is not set" >> .config
-	echo "# CONFIG_PACKAGE_kmod-ata-core is not set" >> .config
-	echo "CONFIG_PACKAGE_kmod-usb-storage=y" >> .config
-	echo "CONFIG_PACKAGE_kmod-usb-storage-uas=y" >> .config
-	echo "CONFIG_PACKAGE_kmod-fs-vfat=y" >> .config
-	echo "CONFIG_PACKAGE_kmod-fs-msdos=y" >> .config
-	echo "CONFIG_PACKAGE_kmod-fs-exfat=y" >> .config
-	echo "CONFIG_PACKAGE_kmod-fs-f2fs=y" >> .config
-	echo "CONFIG_PACKAGE_kmod-fs-ext4=y" >> .config
-	echo "CONFIG_PACKAGE_procd-ujail=y" >> .config
-	echo "CONFIG_PACKAGE_kmod-nls-utf8=y" >> .config
-	echo "CONFIG_PACKAGE_kmod-nls-cp437=y" >> .config
-	echo "CONFIG_PACKAGE_kmod-nls-iso8859-1=y" >> .config
-	echo "CONFIG_PACKAGE_luci=y" >> .config
-	echo "CONFIG_PACKAGE_luci-ssl-openssl=y" >> .config
-	echo "CONFIG_PACKAGE_luci-theme-openwrt-2020=y" >> .config
-	echo "CONFIG_OPENSSL_OPTIMIZE_SPEED=y" >> .config
-	echo "# CONFIG_PACKAGE_libustream-wolfssl is not set" >> .config
-	echo "# CONFIG_PACKAGE_wpad-basic-wolfssl is not set" >> .config
-	echo "CONFIG_PACKAGE_libustream-openssl=y" >> .config
-	echo "CONFIG_PACKAGE_wpad-openssl=y" >> .config
-	make oldconfig </dev/null 2>/dev/null 1>/dev/null
-	make -j$(nproc)
+run_openwrt_ib() {
+	mkdir -p "${INSTALLERDIR}/dl"
+	cd "${INSTALLERDIR}/dl"
+	gpg --no-default-keyring --keyring "${INSTALLERDIR}/openwrt-keyring" --list-key $OPENWRT_PGP 1>/dev/null 2>/dev/null || gpg --no-default-keyring --keyring "${INSTALLERDIR}/openwrt-keyring" --recv-key $OPENWRT_PGP
+	gpg --no-default-keyring --keyring "${INSTALLERDIR}/openwrt-keyring" --list-key $OPENWRT_PGP 1>/dev/null 2>/dev/null || exit 0
+	rm "sha256sums.asc" "sha256sums"
+	wget "${OPENWRT_TARGET}/sha256sums.asc"
+	wget "${OPENWRT_TARGET}/sha256sums"
+	gpg --no-default-keyring --keyring "${INSTALLERDIR}/openwrt-keyring" --verify sha256sums.asc sha256sums || exit 1
+	sha256sum -c sha256sums --ignore-missing || rm -f  "$OPENWRT_INITRD" "$OPENWRT_IB"
+	wget -c "${OPENWRT_TARGET}/${OPENWRT_INITRD}"
+	wget -c "${OPENWRT_TARGET}/${OPENWRT_IB}"
+	sha256sum -c sha256sums --ignore-missing || exit 1
+	mkdir -p "${OPENWRT_DIR}" || exit 1
+	tar -xJf "${INSTALLERDIR}/dl/${OPENWRT_IB}" -C "${OPENWRT_DIR}" --strip-components=1
+	DTC="$(ls -1 ${OPENWRT_DIR}/build_dir/target-aarch64_cortex-a53_musl/linux-mediatek_mt7622/linux-*/scripts/dtc/dtc)"
+	[ -x "$DTC" ] || {
+		echo "can't find dtc executable in OpenWrt IB"
+		exit 1
+	}
+	cd $OPENWRT_DIR
+	make image PROFILE=linksys_e8450-ubi PACKAGES="$OPENWRT_UPG_PACKAGES"
 }
 
 its_add_data() {
@@ -121,7 +102,6 @@ unfit_image() {
 	mkdir -p "$WORKDIR"
 	cd "$WORKDIR"
 	"$UNFIT" "$INFILE"
-	DTC="$(ls -1 ${OPENWRT_DIR}/build_dir/target-aarch64_cortex-a53_musl/linux-mediatek_mt7622/linux-*/scripts/dtc/dtc)"
 
 	"$DTC" -I dtb -O dts -o "$ITSFILE" "$INFILE" || exit 2
 
@@ -141,6 +121,7 @@ unfit_image() {
 }
 
 refit_image() {
+	imgtype=$2
 	# re-add data nodes from files
 	its_add_data > "${ITSFILE}.new"
 
@@ -150,23 +131,23 @@ refit_image() {
 
 	PATH="$PATH:$(dirname "$DTC")" "$MKIMAGE" $MKIMAGE_PARM -f "${ITSFILE}.new" "${FILEBASE}-refit.itb"
 
-	dd if="${FILEBASE}-refit.itb" of="${FILEBASE}-installer.itb" bs=$1 conv=sync
+	dd if="${FILEBASE}-refit.itb" of="${FILEBASE}${imgtype:+-$imgtype}.itb" bs=$1 conv=sync
 }
 
 extract_initrd() {
 	[ -e "${WORKDIR}/initrd@1" ] || return 1
 	[ -e "${WORKDIR}/initrd" ] && rm -rf "${WORKDIR}/initrd"
 	mkdir "${WORKDIR}/initrd"
-	xz -d < "${WORKDIR}/initrd@1" | cpio -i -D "${WORKDIR}/initrd"
+	"${XZ}" -d < "${WORKDIR}/initrd@1" | "${CPIO}" -i -D "${WORKDIR}/initrd"
 	rm "${WORKDIR}/initrd@1"
-	echo "initrd extracted in ${WORKDIR}/initrd"
+	echo "initrd extracted in '${WORKDIR}/initrd'"
 	return 0
 }
 
 repack_initrd() {
 	[ -d "${WORKDIR}/initrd" ] || return 1
 	echo "re-compressing initrd..."
-	( cd "${WORKDIR}/initrd" ; find . | cpio -o -H newc -R root:root | xz -c -9  --check=crc32 > "${WORKDIR}/initrd@1" )
+	( cd "${WORKDIR}/initrd" ; find . | "${CPIO}" -o -H newc -R 0:0 | "${XZ}" -c -9  --check=crc32 > "${WORKDIR}/initrd@1" )
 	return 0
 }
 
@@ -177,30 +158,107 @@ allow_mtd_write() {
 	"$DTC" -I dts -O dtb -o "${WORKDIR}/fdt@1" "${WORKDIR}/fdt@1.dts.patched"
 }
 
-bundle_installer() {
-	unfit_image "$@"
+enable_services() {
+	cd ${WORKDIR}/initrd
+	for service in ./etc/init.d/*; do
+		( cd ${WORKDIR}/initrd ; IPKG_INSTROOT="${WORKDIR}/initrd" $(command -v bash) ./etc/rc.common .$service enable ) 2>/dev/null
+	done
+}
+
+bundle_initrd() {
+	local imgtype=$1
+	shift
+
+	unfit_image "$1"
+	shift
+
 	extract_initrd
-	cp -avr "${INSTALLERDIR}/files/"* "${WORKDIR}/initrd"
+
+	[ "${OPENWRT_REMOVE_PACKAGES}" ] && IPKG_NO_SCRIPT=1 IPKG_INSTROOT="${WORKDIR}/initrd" \
+		"${OPKG}" --offline-root="${WORKDIR}/initrd" -f "${WORKDIR}/initrd/etc/opkg.conf" \
+		remove ${OPENWRT_REMOVE_PACKAGES}
+
+	PATH="$(dirname "${OPKG}"):$PATH" \
+	OPKG_KEYS="${WORKDIR}/initrd/etc/opkg/keys" \
+	TMPDIR="${WORKDIR}/initrd/tmp" \
+		"${OPKG}" --offline-root="${WORKDIR}/initrd" -f "${WORKDIR}/initrd/etc/opkg.conf" \
+			--verify-program="${WORKDIR}/initrd/usr/sbin/opkg-key" \
+			update
+
+	[ "${OPENWRT_ADD_PACKAGES}" ] && \
+		PATH="$(dirname "${OPKG}"):$PATH" \
+		OPKG_KEYS="${WORKDIR}/initrd/etc/opkg/keys" \
+		TMPDIR="${WORKDIR}/initrd/tmp" \
+		IPKG_NO_SCRIPT=1 IPKG_INSTROOT="${WORKDIR}/initrd" \
+		"${OPKG}" --offline-root="${WORKDIR}/initrd" -f "${WORKDIR}/initrd/etc/opkg.conf" \
+		--verify-program="${WORKDIR}/initrd/usr/sbin/opkg-key" \
+		--force-postinst install ${OPENWRT_ADD_PACKAGES}
+
+	case "$imgtype" in
+		recovery)
+			PATH="$(dirname "${OPKG}"):$PATH" \
+			OPKG_KEYS="${WORKDIR}/initrd/etc/opkg/keys" \
+			TMPDIR="${WORKDIR}/initrd/tmp" \
+			IPKG_NO_SCRIPT=1 IPKG_INSTROOT="${WORKDIR}/initrd" \
+				"${OPKG}" --offline-root="${WORKDIR}/initrd" -f "${WORKDIR}/initrd/etc/opkg.conf" \
+				--verify-program="${WORKDIR}/initrd/usr/sbin/opkg-key" \
+				--force-postinst install ${OPENWRT_ADD_REC_PACKAGES}
+			;;
+		installer)
+			cp -avr "${INSTALLERDIR}/files/"* "${WORKDIR}/initrd"
+			cp -v "$@" "${WORKDIR}/initrd/installer"
+			;;
+	esac
+
+	enable_services
+	rm -rf "${WORKDIR}/initrd/tmp/"*
+
 	repack_initrd
-	allow_mtd_write
+
 	cd "${WORKDIR}"
-	refit_image 128k
+	case "$imgtype" in
+		recovery)
+			refit_image 128k
+			;;
+		installer)
+			allow_mtd_write
+			refit_image 128k $imgtype
+			;;
+	esac
 }
 
 linksys_e8450_installer() {
-	build_openwrt
+	OPENWRT_TARGET="https://downloads.openwrt.org/snapshots/targets/mediatek/mt7622"
+	OPENWRT_IB="openwrt-imagebuilder-mediatek-mt7622.Linux-x86_64.tar.xz"
+	OPENWRT_INITRD="openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
+	OPENWRT_REMOVE_PACKAGES="wpad-basic-wolfssl libustream-wolfssl* libwolfssl* kmod-ata-ahci-mtk kmod-ata-core"
+	OPENWRT_ADD_PACKAGES=""
+	OPENWRT_ADD_REC_PACKAGES="wpad-openssl libustream-openssl luci luci-ssl-openssl luci-theme-openwrt-2020"
+	OPENWRT_ENABLE_SERVICE="uhttpd wpad"
+
+	OPENWRT_UPG_PACKAGES="-mtd -u-boot-mt7622_linksys_e8450 -kmod-ata-ahci-mtk -kmod-ata-core \
+				kmod-usb-storage kmod-usb-storage-uas procd-ujail luci luci-ssl-openssl \
+				luci-theme-openwrt-2020 -libustream-wolfssl -wpad-basic-wolfssl \
+				libustream-openssl wpad-openssl $OPENWRT_ADD_PACKAGES"
+
+	run_openwrt_ib
 	BINDIR="${OPENWRT_DIR}/bin/targets/mediatek/mt7622"
 	[ -d "$BINDIR" ] || exit 1
 
-	cp -v "${BINDIR}/openwrt-mediatek-mt7622-linksys_e8450-ubi-preloader.bin" "${INSTALLERDIR}/files/installer"
-	cp -v "${BINDIR}/openwrt-mediatek-mt7622-linksys_e8450-ubi-bl31-uboot.fip" "${INSTALLERDIR}/files/installer"
-	cp -v "${BINDIR}/openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb" "${INSTALLERDIR}/files/installer"
-	cp -v "${BINDIR}/openwrt-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb" "${DESTDIR}"
+	bundle_initrd recovery "${INSTALLERDIR}/dl/${OPENWRT_INITRD}"
+	mv "${WORKDIR}/${FILEBASE}.itb" "${DESTDIR}"
+	rm -r "${WORKDIR}"
 
-	bundle_installer "${BINDIR}/openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
+	bundle_initrd installer "${INSTALLERDIR}/dl/${OPENWRT_INITRD}" \
+		"${BINDIR}/openwrt-mediatek-mt7622-linksys_e8450-ubi-preloader.bin" \
+		"${BINDIR}/openwrt-mediatek-mt7622-linksys_e8450-ubi-bl31-uboot.fip" \
+		"${WORKDIR}/${FILEBASE}.itb"
 
 	mv "${WORKDIR}/${FILEBASE}-installer.itb" "${DESTDIR}"
 	rm -r "${WORKDIR}"
+
+	mv "${BINDIR}/openwrt-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb" "${DESTDIR}"
+
 }
 
 linksys_e8450_installer
