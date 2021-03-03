@@ -118,11 +118,19 @@ install_prepare_ubi() {
 	mtddev=$1
 	[ -e /sys/class/ubi/ubi0 ] && ubidetach -p $mtddev
 	ubiformat -y $mtddev
+	sleep 1
 	ubiattach -p $mtddev
 	sync
 	sleep 1
 	[ -e /sys/class/ubi/ubi0 ] || exit 1
-	[ -e /dev/ubi0 ] || mknod /dev/ubi0 c 250 0
+	devminormajor=$(cat /sys/class/ubi/ubi0/dev)
+	oIFS=$IFS
+	IFS=':'
+	set -- $devminormajor
+	devminor=$1
+	devmajor=$2
+	IFS=$oIFS
+	[ -e /dev/ubi0 ] || mknod /dev/ubi0 c $devminor $devmajor
 	[ "$HAS_ENV" = "1" ] && ubimkvol /dev/ubi0 -n 0 -s 1MiB -N ubootenv && ubimkvol /dev/ubi0 -n 1 -s 1MiB -N ubootenv2
 }
 
