@@ -161,7 +161,7 @@ allow_mtd_write() {
 enable_services() {
 	cd ${WORKDIR}/initrd
 	for service in ./etc/init.d/*; do
-		( cd ${WORKDIR}/initrd ; IPKG_INSTROOT="${WORKDIR}/initrd" $(command -v bash) ./etc/rc.common .$service enable ) 2>/dev/null
+		( cd ${WORKDIR}/initrd ; IPKG_INSTROOT="${WORKDIR}/initrd" $(command -v bash) ./etc/rc.common $service enable 2>/dev/null )
 	done
 }
 
@@ -245,20 +245,21 @@ linksys_e8450_installer() {
 	BINDIR="${OPENWRT_DIR}/bin/targets/mediatek/mt7622"
 	[ -d "$BINDIR" ] || exit 1
 
+	mv "${BINDIR}/openwrt-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb" "${DESTDIR}"
+
 	bundle_initrd recovery "${INSTALLERDIR}/dl/${OPENWRT_INITRD}"
+
 	mv "${WORKDIR}/${FILEBASE}.itb" "${DESTDIR}"
 	rm -r "${WORKDIR}"
+
 
 	bundle_initrd installer "${INSTALLERDIR}/dl/${OPENWRT_INITRD}" \
 		"${BINDIR}/openwrt-mediatek-mt7622-linksys_e8450-ubi-preloader.bin" \
 		"${BINDIR}/openwrt-mediatek-mt7622-linksys_e8450-ubi-bl31-uboot.fip" \
-		"${WORKDIR}/${FILEBASE}.itb"
+		"${DESTDIR}/${FILEBASE}.itb"
 
 	mv "${WORKDIR}/${FILEBASE}-installer.itb" "${DESTDIR}"
 	rm -r "${WORKDIR}"
-
-	mv "${BINDIR}/openwrt-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb" "${DESTDIR}"
-
 }
 
 linksys_e8450_installer
