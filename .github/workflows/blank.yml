@@ -24,8 +24,8 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
-      - name: Install libfdt-dev
-        run: sudo apt install libfdt-dev
+      - name: Install libfdt-dev and cmake
+        run: sudo apt install libfdt-dev cmake
 
       - name: Run builder script
         run: bash build_installer.sh
