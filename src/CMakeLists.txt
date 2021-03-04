@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 2.8)
+
+PROJECT(unfit C)
+ADD_DEFINITIONS(-ggdb --std=gnu99 -Wmissing-declarations)
+
+SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
+
+SET(SOURCES unfit.c)
+SET(LIBS fdt)
+
+ADD_EXECUTABLE(unfit ${SOURCES})
+TARGET_LINK_LIBRARIES(unfit ${LIBS})
+INSTALL(TARGETS unfit
+	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)

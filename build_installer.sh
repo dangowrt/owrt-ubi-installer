@@ -13,7 +13,7 @@ OPKG="${OPENWRT_DIR}/staging_dir/host/bin/opkg"
 XZ="${OPENWRT_DIR}/staging_dir/host/bin/xz"
 
 UNFIT="${INSTALLERDIR}/unfit"
-[ -x "$UNFIT" ] || cc -o "$UNFIT" -lfdt "${UNFIT}.c" || {
+[ -x "$UNFIT" ] || ( cd "${INSTALLERDIR}/src" ; cmake . ; make all ; cp unfit .. ) || {
 	echo "can't build unfit. please install gcc and libfdt-dev"
 	exit 0
 }
