@@ -135,11 +135,11 @@ refit_image() {
 }
 
 extract_initrd() {
-	[ -e "${WORKDIR}/initrd@1" ] || return 1
+	[ -e "${WORKDIR}/initrd-1" ] || return 1
 	[ -e "${WORKDIR}/initrd" ] && rm -rf "${WORKDIR}/initrd"
 	mkdir "${WORKDIR}/initrd"
-	"${XZ}" -d < "${WORKDIR}/initrd@1" | "${CPIO}" -i -D "${WORKDIR}/initrd"
-	rm "${WORKDIR}/initrd@1"
+	"${XZ}" -d < "${WORKDIR}/initrd-1" | "${CPIO}" -i -D "${WORKDIR}/initrd"
+	rm "${WORKDIR}/initrd-1"
 	echo "initrd extracted in '${WORKDIR}/initrd'"
 	return 0
 }
@@ -147,15 +147,15 @@ extract_initrd() {
 repack_initrd() {
 	[ -d "${WORKDIR}/initrd" ] || return 1
 	echo "re-compressing initrd..."
-	( cd "${WORKDIR}/initrd" ; find . | "${CPIO}" -o -H newc -R 0:0 | "${XZ}" -c -9  --check=crc32 > "${WORKDIR}/initrd@1" )
+	( cd "${WORKDIR}/initrd" ; find . | "${CPIO}" -o -H newc -R 0:0 | "${XZ}" -c -9  --check=crc32 > "${WORKDIR}/initrd-1" )
 	return 0
 }
 
 allow_mtd_write() {
-	"$DTC" -I dtb -O dts -o "${WORKDIR}/fdt@1.dts" "${WORKDIR}/fdt@1"
-	rm "${WORKDIR}/fdt@1"
-	grep -v 'read-only' "${WORKDIR}/fdt@1.dts" > "${WORKDIR}/fdt@1.dts.patched"
-	"$DTC" -I dts -O dtb -o "${WORKDIR}/fdt@1" "${WORKDIR}/fdt@1.dts.patched"
+	"$DTC" -I dtb -O dts -o "${WORKDIR}/fdt-1.dts" "${WORKDIR}/fdt-1"
+	rm "${WORKDIR}/fdt-1"
+	grep -v 'read-only' "${WORKDIR}/fdt-1.dts" > "${WORKDIR}/fdt-1.dts.patched"
+	"$DTC" -I dts -O dtb -o "${WORKDIR}/fdt-1" "${WORKDIR}/fdt-1.dts.patched"
 }
 
 enable_services() {
