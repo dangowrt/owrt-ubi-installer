@@ -12,9 +12,6 @@ If you ever want to go back to the vendor firmware, make sure you have made a co
 
 To use the script, you will need all OpenWrt build requirements installed as well as libfdt-dev which is needed by the installer-generater itself.
 
-
-# WARNING: **BROKEN IMAGES AS OF 2021-03-05! WAIT UNTIL [build #795](http://buildbot.openwrt.org/master/images/builders/mediatek%2Fmt7622/builds/795) HAS RUN IF YOU WANT TO RUN THE SCRIPT YOURSELF!
-
 You may of course as well go ahead and download the generated files [here](https://github.com/dangowrt/linksys-e8450-openwrt-installer/releases/tag/v0.1).
 
 ## Steps
