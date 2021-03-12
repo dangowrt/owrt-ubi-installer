@@ -12,7 +12,7 @@ If you ever want to go back to the vendor firmware, make sure you have made a co
 
 To use the script, you will need all OpenWrt build requirements installed as well as libfdt-dev which is needed by the installer-generater itself.
 
-You may of course as well go ahead and download the generated files [here](https://github.com/dangowrt/linksys-e8450-openwrt-installer/releases/tag/v0.1).
+You may of course as well go ahead and download the generated files [here](https://github.com/dangowrt/linksys-e8450-openwrt-installer/releases).
 
 ## Steps
 
