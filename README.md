@@ -48,6 +48,7 @@ PROCEED AT YOUR OWN RISK!
 7. Reboot and login to LuCI as normal. 
 
 (Alternatively you can change the default LuCI with one listed [here](https://openwrt.org/docs/guide-user/luci/luci.essentials).
+
 This allows other server backends besides uhttpd, or to enable SSL/TLS(HTTPS) for LUCI.)
 
 The `luci-ssl-nginx` package has been very performant in my testing. 
