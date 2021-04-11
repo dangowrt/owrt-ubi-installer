@@ -34,7 +34,7 @@ You may of course as well go ahead and download the generated files [here](https
 11. Upload the `openwrt-mediatek-mt7622-linksys_e8450-ubi-sysupgrade.itb` file.
 12. Reboot and proceed to a normal OpenWRT setup (or upload your configuration file).
 
-## Convert "release v0.3" to OpenWRT snapshot release.
+## Upgrading to OpenWRT snapshot release.
 **WARNING** SNAPSHOT RELEASES ARE LARGELY UNTESTED! 
 PROCEED AT YOUR OWN RISK!
 1. If you haven't already, backup every "mtdblock" category, and move the "boot_backup" to another device. (In the event of emergency you can reflash via [JTAG](https://openwrt.org/toh/linksys/linksys_e8450)
