@@ -45,6 +45,7 @@ PROCEED AT YOUR OWN RISK!
 5. Connect the WAN port to a router with internet, and DHCP
 6. Within SSH type `opkg update` then `opkg install luci` (Alternatively install one of the packages [here](https://openwrt.org/docs/guide-user/luci/luci.essentials) for another server besides uhttpd or to enable SSL/TLS(HTTPS) for LUCI.
 7. Reboot and login to LuCI as normal. 
+
 The `luci-ssl-nginx` package has been very performant in my testing. 
 
 (Verified with the April 6th 2021 Snapshot release)
