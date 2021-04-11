@@ -36,7 +36,6 @@ You may of course as well go ahead and download the generated files [here](https
 
 ## Convert "release v0.3" to OpenWRT snapshot release.
 **WARNING** SNAPSHOT RELEASES ARE LARGELY UNTESTED! 
-THIS WILL ALSO REMOVE LUCI PACKAGES RESULTING IN A "HEADLESS" ROUTER WITH STOCK SETTINGS!
 PROCEED AT YOUR OWN RISK!
 1. If you haven't already, backup every "mtdblock" category, and move the "boot_backup" to another device. (In the event of emergency you can reflash via [JTAG](https://openwrt.org/toh/linksys/linksys_e8450)
 2. `ssh root@192.168.1.1 -p 22`
