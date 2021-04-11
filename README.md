@@ -53,4 +53,5 @@ The `luci-ssl-nginx` package has been very performant in my testing.
 ## Post OpenWRT "recovery mode" process
 1. Hold down the "reset" button below the "WPS" button whilst powering on the device.
 2. Release the button once the power LED turns a orange/yellow color.
+
 This will remove any user configuration errors and allow restoring or upgrading from [ssh](https://openwrt.org/docs/guide-user/installation/sysupgrade.cli)/http/[tftp](https://openwrt.org/docs/guide-user/installation/generic.flashing.tftp).
