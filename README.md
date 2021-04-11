@@ -39,13 +39,16 @@ You may of course as well go ahead and download the generated files [here](https
 THIS WILL ALSO REMOVE LUCI PACKAGES RESULTING IN A "HEADLESS" ROUTER WITH STOCK SETTINGS!
 PROCEED AT YOUR OWN RISK!
 1. If you haven't already, backup every "mtdblock" category, and move the "boot_backup" to another device. (In the event of emergency you can reflash via [JTAG](https://openwrt.org/toh/linksys/linksys_e8450)
-2. Backup your configuration file which can be loaded after.
-3. Upload the latest UBI [sysupgrade.itb](https://downloads.openwrt.org/snapshots/targets/mediatek/mt7622/openwrt-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb)
-4. Reboot, and `ssh root@192.168.1.1 -p 22`
-5. Connect the WAN port to a router with internet, and DHCP
-6. If you wish to preserve package lists, and configuration settings install the `auc` package as follows:
-`opkg update` then `opkg install auc`, and lastly `auc` (Additionally there's the `luci-app-attendedsysupgrade` simplifying future upgrades.)
-7. Reboot and login to LuCI as normal. 
+2. `ssh root@192.168.1.1 -p 22`
+3. Connect the WAN port to a router with internet, and DHCP
+4. Install `auc` package as follows:
+```
+opkg update
+opkg install auc
+```
+(instead of using `auc` on the console you may as well use `luci-app-attendedsysupgrade`)
+5. Run `auc` (or open attended sysupgrade tab in LuCI)
+6. Once completed, the system will reboot with current snapshot firmware.
 
 (Alternatively you can change the default LuCI with one listed [here](https://openwrt.org/docs/guide-user/luci/luci.essentials).
 
