@@ -2,7 +2,7 @@
 Supporting the: "Linksys E8450", and the "Belkin RT3200".(aka "Belkin AX3200")
 
 ![animated gif showing web UI and serial during installation](https://user-images.githubusercontent.com/9948313/108781223-78915500-7561-11eb-851a-3c4c744ad6c2.gif)
-(The serial interface is displaying RX only for documentation purposes as the only interaction required is from within the web browser via HTTP file upload.
+(The serial interface is displaying RX only for documentation purposes as the only interaction required is from within the web browser via HTTP file upload.)
 
 This script downloads the OpenWrt ImageBuilder to generate a release-like (ie. including LuCI) sysupgrade image. 
 The process involves re-packaging the initramfs image to contain everything necessary for a permanent recovery image within NAND flash including the installer script and the prerequisite installation images.
