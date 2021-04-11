@@ -50,12 +50,6 @@ opkg install auc
 5. Run `auc` (or open attended sysupgrade tab in LuCI)
 6. Once completed, the system will reboot with current snapshot firmware.
 
-(Alternatively you can change the default LuCI with one listed [here](https://openwrt.org/docs/guide-user/luci/luci.essentials).
-
-This allows other server backends besides uhttpd, or to enable SSL/TLS(HTTPS) for LUCI.)
-
-The `luci-ssl-nginx` package has been very performant in my testing. 
-
 (Verified with the April 6th 2021 Snapshot release)
 
 ## Post OpenWRT "recovery mode" process
