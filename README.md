@@ -45,7 +45,8 @@ PROCEED AT YOUR OWN RISK!
 opkg update
 opkg install auc
 ```
-(instead of using `auc` on the console you may as well use `luci-app-attendedsysupgrade`)
+(instead of using `auc` on the console you may as well use `luci-app-attendedsysupgrade` for a Web-UI version of the updater)
+
 5. Run `auc` (or open attended sysupgrade tab in LuCI)
 6. Once completed, the system will reboot with current snapshot firmware.
 
