@@ -32,9 +32,9 @@ You may of course as well go ahead and download the generated files [here](https
 9. Wait for OpenWrt recovery image to come up.
 10. Login and navigate to _System_ -> _Backup / Flash Firmware_ (Consider taking another backup of every MTDblock category before proceeding)
 11. Upload the `openwrt-mediatek-mt7622-linksys_e8450-ubi-sysupgrade.itb` file.
-12. Reboot and proceed to a normal OpenWRT setup (or upload your configuration file).
+12. Reboot and proceed to a normal OpenWrt setup (or upload your configuration file).
 
-## Upgrading to OpenWRT snapshot release.
+## Upgrading to OpenWrt snapshot release.
 **WARNING** SNAPSHOT RELEASES ARE LARGELY UNTESTED! 
 PROCEED AT YOUR OWN RISK!
 1. If you haven't already, backup every "mtdblock" category, and move the "boot_backup" to another device. (In the event of emergency you can reflash via [JTAG](https://openwrt.org/toh/linksys/linksys_e8450)
@@ -52,7 +52,7 @@ opkg install auc
 
 (Verified with the April 6th 2021 Snapshot release)
 
-## Post OpenWRT "recovery mode" process
+## Post OpenWrt "recovery mode" process
 1. Hold down the "reset" button below the "WPS" button whilst powering on the device.
 2. Release the button once the power LED turns a orange/yellow color.
 
