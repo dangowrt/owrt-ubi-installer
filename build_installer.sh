@@ -3,7 +3,7 @@
 DESTDIR="$PWD"
 
 OPENWRT_PGP="0xCD84BCED626471F1"
-
+KEYSERVER="keyserver.ubuntu.com"
 INSTALLERDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 OPENWRT_DIR="${INSTALLERDIR}/openwrt-ib"
 
@@ -26,7 +26,7 @@ ITSFILE=
 run_openwrt_ib() {
 	mkdir -p "${INSTALLERDIR}/dl"
 	cd "${INSTALLERDIR}/dl"
-	gpg --no-default-keyring --keyring "${INSTALLERDIR}/openwrt-keyring" --list-key $OPENWRT_PGP 1>/dev/null 2>/dev/null || gpg --no-default-keyring --keyring "${INSTALLERDIR}/openwrt-keyring" --recv-key $OPENWRT_PGP
+	gpg --no-default-keyring--keyring "${INSTALLERDIR}/openwrt-keyring" --list-key $OPENWRT_PGP 1>/dev/null 2>/dev/null || gpg --no-default-keyring --keyring "${INSTALLERDIR}/openwrt-keyring" --keyserver ${KEYSERVER}  --recv-key $OPENWRT_PGP
 	gpg --no-default-keyring --keyring "${INSTALLERDIR}/openwrt-keyring" --list-key $OPENWRT_PGP 1>/dev/null 2>/dev/null || exit 0
 	rm "sha256sums.asc" "sha256sums"
 	wget "${OPENWRT_TARGET}/sha256sums.asc"
@@ -231,15 +231,17 @@ linksys_e8450_installer() {
 	OPENWRT_TARGET="https://downloads.openwrt.org/snapshots/targets/mediatek/mt7622"
 	OPENWRT_IB="openwrt-imagebuilder-mediatek-mt7622.Linux-x86_64.tar.xz"
 	OPENWRT_INITRD="openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
-	OPENWRT_REMOVE_PACKAGES="wpad-basic-wolfssl libustream-wolfssl* libwolfssl* kmod-ata-ahci-mtk kmod-ata-core"
+	OPENWRT_REMOVE_PACKAGES="wpad-basic-wolfssl libustream-wolfssl* libwolfssl* px5g-wolfssl"
 	OPENWRT_ADD_PACKAGES=""
 	OPENWRT_ADD_REC_PACKAGES="wpad-openssl libustream-openssl luci luci-ssl-openssl luci-theme-openwrt-2020"
 	OPENWRT_ENABLE_SERVICE="uhttpd wpad"
 
-	OPENWRT_UPG_PACKAGES="-mtd -u-boot-mt7622_linksys_e8450 -kmod-ata-ahci-mtk -kmod-ata-core \
-				kmod-usb-storage kmod-usb-storage-uas procd-ujail luci luci-ssl-openssl \
+	OPENWRT_UPG_PACKAGES="auc blockd kmod-usb-storage kmod-usb-storage-uas kmod-fs-vfat \
+				kmod-nls-base kmod-nls-cp437 kmod-nls-iso8859-1 kmod-nls-utf8 \
+				kmod-fs-ext4 kmod-fs-f2fs procd-ujail luci luci-ssl-openssl \
 				luci-theme-openwrt-2020 -libustream-wolfssl -wpad-basic-wolfssl \
-				libustream-openssl wpad-openssl $OPENWRT_ADD_PACKAGES"
+				-px5g-wolfssl libustream-openssl wpad-openssl \
+				luci-app-attendedsysupgrade $OPENWRT_ADD_PACKAGES"
 
 	run_openwrt_ib
 	BINDIR="${OPENWRT_DIR}/bin/targets/mediatek/mt7622"
