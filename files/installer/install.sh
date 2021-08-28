@@ -39,13 +39,8 @@ install_fix_factory() {
 		exit 1
 	fi
 
-	echo -n "found factory partition at offset $(printf %08x $((off))), "
-	if [ $((off)) -eq 0 ]; then
-		echo "ok."
-		return
-	fi
+	echo -n "found factory partition at offset $(printf %08x $((off))), rewriting..."
 
-	echo "fixing..."
 	dd if=$mtddev bs=$ebs skip=$skip count=1 of=/tmp/factory-fixed
 	mtd write /tmp/factory-fixed $mtddev
 	local magic="$(hexdump -v -n 2 -e '"%02x"' $mtddev)"
@@ -90,9 +85,9 @@ install_fix_macpart() {
 		exit 1
 	fi
 
-	[ $((blockoff)) -eq $((destoff)) ] && return
+	[ $((blockoff)) -eq $((destoff)) ] ||
+		echo "mac addresses block shifted by 0x$(printf %08x $((blockoff - destoff))), fixing."
 
-	echo "mac addresses block shifted by 0x$(printf %08x $((blockoff - destoff))), fixing."
 	dd if=$mtddev bs=$ebs skip=$skip count=1 of=/tmp/macs-fixed
 	mtd -p $destoff -l $ebs write /tmp/macs-fixed $mtddev
 }
@@ -140,10 +135,10 @@ install_prepare_ubi() {
 # backup mtd0...mtd2
 install_prepare_backup 2
 
-# make sure two mac addresses are store at correct offset in factory
+# rewrite two mac addresses are stored at correct offset in factory partition
 install_fix_macpart /dev/mtd2 0x60000 0x1fff4
 
-# make sure wifi eeprom starts at correct offset
+# make sure wifi eeprom starts at correct offset and rewrite to fix ECC
 install_fix_factory /dev/mtd2 "7622"
 
 echo "redundantly write bl2 into the first 4 blocks"
