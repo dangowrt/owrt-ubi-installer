@@ -37,7 +37,7 @@ You may of course as well go ahead and download the generated files [here](https
 ## Upgrading to OpenWrt snapshot release.
 **WARNING** SNAPSHOT RELEASES ARE LARGELY UNTESTED! 
 PROCEED AT YOUR OWN RISK!
-1. If you haven't already, backup every "mtdblock" category, and move the "boot_backup" to another device. (In the event of emergency you can reflash via [JTAG](https://openwrt.org/toh/linksys/linksys_e8450)
+1. If you haven't already, backup every "mtdblock" category, and move the "boot_backup" to another device. (In the event of emergency you can reflash via [JTAG](https://openwrt.org/toh/linksys/e8450#jtag)
 2. `ssh root@192.168.1.1 -p 22`
 3. Connect the WAN port to a router with internet, and DHCP
 4. Install `auc` package as follows:
