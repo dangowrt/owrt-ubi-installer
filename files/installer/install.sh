@@ -97,7 +97,7 @@ install_prepare_backup() {
 	mkdir /tmp/backup
 	for mtdnum in $(seq 0 $1); do
 		local ebs=$(cat /sys/class/mtd/mtd${mtdnum}/erasesize)
-		dd bs=$ebs if=/dev/mtd${mtdnum} of=/tmp/backup/mtd${mtdnum}
+		dd bs=$ebs if=/dev/mtd${mtdnum} of=/tmp/backup/mtd${mtdnum} ${2:+count=$2}
 	done
 }
 
@@ -132,8 +132,8 @@ install_prepare_ubi() {
 # Linksys E8450 got factory data in /dev/mtd2
 # things may be shifted due to MTK BMT/BBT being used previously, fix that
 
-# backup mtd0...mtd2
-install_prepare_backup 2
+# backup mtd0...mtd3, max. 16x 128kb block
+install_prepare_backup 3 16
 
 # rewrite two mac addresses are stored at correct offset in factory partition
 install_fix_macpart /dev/mtd2 0x60000 0x1fff4
