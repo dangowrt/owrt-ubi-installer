@@ -9,7 +9,7 @@ The process involves re-packaging the initramfs image to contain everything nece
 
 The resulting file `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb` is suitable to be flashed by the vendor firmware Web-UI as well as non-UBI OpenWrt running on the device (use `sysupgrade -F openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb`).
 
-**WARNING** This will replace the bootloader (TF-A 2.2, U-Boot 2020.10) and convert the flash layout of the device to UBI! The installer stores a copy of the previous bootchain in a dedicated UBI volume `boot_backup`. If you want to go back to the vendor firmware, you will have to boot into recovery mode (ie. initramfs),
+**WARNING** This will replace the bootloader (TF-A 2.4, U-Boot 2021.10) and convert the flash layout of the device to UBI! The installer stores a copy of the previous bootchain in a dedicated UBI volume `boot_backup`. If you want to go back to the vendor firmware, you will have to boot into recovery mode (ie. initramfs),
 copy those files into `/tmp`, umount the UBI volume, detach the UBI device and then write the files to the corresponding MTD partitions (mtd write $file /dev/mtdX).
 
 To be on the safe side, it is still recommended to make a complete backup of the device flash __**before**__ running the installer!
@@ -30,13 +30,18 @@ You may of course as well go ahead and download the generated files [here](https
 7. Navigate to __Administration__ -> __Firmware Upgrade__
 8. Upload `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb` to vendor web interface upgrade page.
 9. Wait for OpenWrt recovery image to come up.
-10. Login and navigate to _System_ -> _Backup / Flash Firmware_ (Consider taking another backup of every MTDblock category before proceeding)
+10. Login and navigate to __System__ -> __Backup / Flash Firmware__
 11. Upload the `openwrt-mediatek-mt7622-linksys_e8450-ubi-sysupgrade.itb` file.
 12. Reboot and proceed to a normal OpenWrt setup (or upload your configuration file).
 
 ## Upgrading to OpenWrt snapshot release.
-**WARNING** SNAPSHOT RELEASES ARE LARGELY UNTESTED! 
+
+**WARNING**
+
+SNAPSHOT RELEASES ARE LARGELY UNTESTED!
+
 PROCEED AT YOUR OWN RISK!
+
 1. If you haven't already, backup every "mtdblock" category, and move the "boot_backup" to another device. (In the event of emergency you can reflash via [JTAG](https://openwrt.org/toh/linksys/e8450#jtag)
 2. `ssh root@192.168.1.1 -p 22`
 3. Connect the WAN port to a router with internet, and DHCP
