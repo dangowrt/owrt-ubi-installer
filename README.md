@@ -2,22 +2,21 @@
 
 ![animated gif showing web UI and serial during installation](https://user-images.githubusercontent.com/9948313/108781223-78915500-7561-11eb-851a-3c4c744ad6c2.gif)
 
-*Animated GIF showing the installation process. The serial interface on the right is displaying RX for documentation purpose only. The interaction required is shown on the left, which is done entirely within the web browser.*
+*Animated GIF showing the installation process. The window on the right displays the serial RX interface for documentation purpose only. The interaction required is shown on the left, which is done entirely within the web browser.*
 
-This script downloads the OpenWrt ImageBuilder to generate a release-like (ie. LuCI included) *sysupgrade* image. The process involves re-packaging the *initramfs* image to contain everything necessary for a permanent recovery image within the NAND flash, including the installer script and the pre-requisite installation images.
+This script downloads the OpenWrt ImageBuilder to generate a release-like (i.e. LuCI included) *sysupgrade* image. The process involves re-packaging the *initramfs* image to contain everything necessary for a permanent recovery image within the NAND flash, including the installer script and the prerequisite installation images.
 
 The resulting file `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb` can be flashed via the vendor/official firmware web interface, as well as OpenWrt firmware running non-UBI builds (by running `sysupgrade -F openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb`).
 
-**WARNING #1** This will replace the bootloader (TF-A 2.4, U-Boot 2021.10) and convert the flash layout of the device to UBI! The installer stores a copy of the previous bootchain in a dedicated UBI volume `boot_backup`.
+**WARNING #1** This will replace the bootloader (TF-A 2.4, U-Boot 2021.10) and convert the flash layout of the device to [UBI](https://github.com/dangowrt/linksys-e8450-openwrt-installer/issues/9). The installer stores a copy of the previous bootchain in a dedicated UBI volume `boot_backup`.
 
 **WARNING #2** Re-flashing the installer when the device is already using UBI flash layout will erase the previously backed up bootchain, which in most cases would be the vendor/official one.
 
-For utmost safety (but not absolutely necessary), you are recommended to make a complete backup of the device flash __**before**__ running the installer. (see below "Device Flash Backup Procedure")
+For utmost safety (but not absolutely necessary), you are recommended to make a complete backup of the device flash __**before**__ running the installer. (see below "Device flash backup procedure")
 
 You'll need the below to use the script to generate the installer image:
 * OpenWrt ImageBuilder
-* `libfdt-dev`
-* `cmake`
+* All [prerequisites of the OpenWrt ImageBuilder](https://openwrt.org/docs/guide-user/additional-software/imagebuilder#prerequisites) 
 
 If you are not interested in building yourself, the pre-built files are available [here](https://github.com/dangowrt/linksys-e8450-openwrt-installer/releases).
 
@@ -29,30 +28,41 @@ If you are not interested in building yourself, the pre-built files are availabl
 3. Power on the device, wait about a minute for it to be ready.
 4. Open a web browser, navigate to http://192.168.1.1 and wait for the wizard to come up.
 5. Click *exactly* inside the radio button to confirm the terms and conditions, then abort the wizard.
-6. You should then be greeted by the login screen, the stock password is "admin". (This step may be required for Linksys E8450 only)
-7. Navigate to __Administration__ -> __Firmware Upgrade__
+6. You should then be greeted by the login screen, the stock password is "admin".
+7. Navigate to __Administration__ -> __Firmware Upgrade__.
 8. Upload `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb`.
-9. Wait for a few minutes, the OpenWrt recovery image should come up.
-10. Login and navigate to __System__, save a copy of each of the `mtdblock`.
-11. Upload `openwrt-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb`.
+9. Wait for a minute, the OpenWrt recovery image should come up.
+9. Navigate to __System__ -> __Backup / Flash Firmware__.
+10. Upload `openwrt-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb`.
 12. The device will reboot, you may proceed to setup OpenWrt.
 
-## Upgrading to the Latest OpenWrt Snapshot Release.
+## Upgrading to the latest OpenWrt snapshot 
 
 **WARNING**
 SNAPSHOT RELEASES ARE LARGELY UNTESTED!
 PROCEED AT YOUR OWN RISK!
 
-Attended Sysupgrade (auc) is included since version 0.6, all you need to do is to connect the router to the Internet and run `auc` from the web interface.
+1. Backup the original/vendor bootchain
 
-## To Enter Recovery Mode under OpenWrt
+   Connect to the device via SSH and enter the following commands:
+
+   ```
+   mkdir /tmp/boot_backup
+   mount -t ubifs /dev/ubi0_3 /tmp/boot_backup
+   ```
+
+   Then, copy the files under */tmp/boot_backup* using *scp* to your host. These files are needed in case you want to restore the original/vendor firmware. They can also be used in emergency case for reflashing via [JTAG](https://openwrt.org/toh/linksys/e8450#jtag)
+
+2. `auc` (Attended Sysupgrade) and `luci-app-attendedsysupgrade` are included since version 0.6. Simply navigate to __System__ -> __Attended Sysupgrade__ and proceed accordingly.
+
+## To enter recovery mode under OpenWrt
 
 1. Hold down the "reset" button (below the "WPS" button) whilst powering on the device.
 2. Release the button once the power LED turns into orange/yellow.
 
 This will remove any user configuration and allow restoring or upgrading from [ssh](https://openwrt.org/docs/guide-user/installation/sysupgrade.cli)/http/[tftp](https://openwrt.org/docs/guide-user/installation/generic.flashing.tftp).
 
-## Device Flash Backup Procedure
+## Device flash backup procedure
 
 1. Flash `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb` (note that this file doesn't have the word _installer_ in it's filename)
 2. Login and navigate to __System__, save a copy of each of the `mtdblock`.
@@ -65,28 +75,15 @@ for part in mtd[0123] ; do
 done
 ```
 
-Then, copy the resulting files using scp to your host.
+Then, copy the resulting files using *scp* to your host.
 
-## Backup the Original/Vendor Bootchain under OpenWrt ##
-
-Connect to the device via SSH and enter the following commands:
-
-```
-mkdir /tmp/boot_backup
-mount -t ubifs /dev/ubi0_3 /tmp/boot_backup
-```
-
-Then, copy the files under /tmp/boot_backup using scp to your host. These files can also be used in emergency case for reflashing via [JTAG](https://openwrt.org/toh/linksys/e8450#jtag)
-
-## Restoring the Vendor/Official Firmware ##
+## Restoring the vendor/official firmware ##
 
 1. Flash `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb` (note that this file doesn't have the word _installer_ in it's filename)
-2. Revert to the vendor mtd
+2. Use *scp* to copy the original/vendor bootchain (*mtdx* files) to the device's */tmp* folder
+2. Connect to the device via SSH and enter the following commands:
 
 ```
-mount -t ubifs /dev/ubi0_3 /mnt
-cp /mnt/mtd* /tmp
-umount /mnt
 ubidetach -d 0
 mtd write /tmp/mtd0 /dev/mtd0
 mtd write /tmp/mtd1 /dev/mtd1
