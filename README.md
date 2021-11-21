@@ -91,4 +91,4 @@ mtd write /tmp/mtd2 /dev/mtd2
 mtd write /tmp/mtd3 /dev/mtd3
 ```
 
-3. Reboot the device, use TFTP to flash the vendor firmware according to [this](https://www.linksys.com/us/support-article?articleNum=137928)
+3. Reboot the device, use TFTP to flash the vendor firmware according to [this guide](https://www.linksys.com/us/support-article?articleNum=137928).
