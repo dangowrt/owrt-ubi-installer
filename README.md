@@ -1,4 +1,4 @@
-# An OpenWrt UBI Installer Image Generator for Linksys E8450 and Belkin RT3200
+## An OpenWrt UBI Installer Image Generator for Linksys E8450 and Belkin RT3200
 
 ![animated gif showing web UI and serial during installation](https://user-images.githubusercontent.com/9948313/108781223-78915500-7561-11eb-851a-3c4c744ad6c2.gif)
 
