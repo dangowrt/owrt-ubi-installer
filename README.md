@@ -80,7 +80,7 @@ Then, copy the resulting files using *scp* to your host.
 
 ## Restoring the vendor/official firmware ##
 
-**If you have used v0.6.1 or later of installer, skip step #1 and boot into recovery **
+**If you have used v0.6.1 or later of installer, skip step #1 and just boot into on-flash recovery/initramfs instead.**
 
 1. Flash `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb` (note that this file doesn't have the word _installer_ in it's filename)
 2. Use *scp* to copy the original/vendor bootchain (*mtdx* files) to the device's */tmp* folder
