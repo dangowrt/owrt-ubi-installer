@@ -12,9 +12,12 @@ INSTALLER_DIR="/installer"
 PRELOADER="$INSTALLER_DIR/openwrt-mediatek-mt7622-linksys_e8450-ubi-preloader.bin"
 FIP="$INSTALLER_DIR/openwrt-mediatek-mt7622-linksys_e8450-ubi-bl31-uboot.fip"
 RECOVERY="$INSTALLER_DIR/openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
-FIT="$INSTALLER_DIR/openwrt-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb"
 HAS_ENV=1
 
+if [ ! -s "$PRELOADER" ] || [ ! -s "$FIP" ] || [ ! -s "$RECOVERY" ]; then
+	echo "Missing files. Aborting."
+	exit 1
+fi
 
 install_fix_factory() {
 	local mtddev=$1
