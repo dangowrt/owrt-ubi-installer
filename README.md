@@ -84,7 +84,7 @@ After this, do not attempt to flash `openwrt-mediatek-mt7622-linksys_e8450-ubi-i
 
 **If you have used v0.6.1 or later of installer, skip step #1 and just boot into on-flash recovery/initramfs instead.**
 
-1. Flash `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb` (note that this file doesn't have the word _installer_ in it's filename)
+1. Boot into recovery mode, either by flashing `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb` (note that this file doesn't have the word _installer_ in it's filename) *or* by holding the RESET button while connecting the device to power *or* by issueing `echo c > /proc/sysrq-trigger` while running the production firmware. 
 2. Use *scp* to copy the original/vendor bootchain (*mtdx* files) to the device's */tmp* folder
 2. Connect to the device via SSH and enter the following commands:
 
