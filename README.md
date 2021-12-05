@@ -78,6 +78,8 @@ done
 
 Then, copy the resulting files using *scp* to your host.
 
+After this, do not attempt to flash `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb` from the running initramfs system -- it will fail to reboot, possibly requiring serial console access. Instead, power cycle the device to reboot into the original non-ubi firmware, and then flash the `installer` version.
+
 ## Restoring the vendor/official firmware ##
 
 **If you have used v0.6.1 or later of installer, skip step #1 and just boot into on-flash recovery/initramfs instead.**
