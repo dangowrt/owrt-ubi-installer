@@ -12,7 +12,7 @@ The resulting file `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery
 
 **WARNING #2** Re-flashing the installer when the device is already using UBI flash layout will erase the previously backed up bootchain, which in most cases would be the vendor/official one.
 
-For utmost safety (but not absolutely necessary), you are recommended to make a complete backup of the device flash __**before**__ running the installer. (see below "Device flash backup procedure while running the stock firmware or non-UBI OpenWrt build")
+For utmost safety (but it's not absolutely necessary), it's recommended that you make a complete backup of the device flash __**before**__ running the installer. (see below "[Device flash backup procedure while running the stock firmware or non-UBI OpenWrt build](#device-flash-backup-procedure-while-running-the-stock-firmware-or-non-ubi-openwrt-build)")
 
 You'll need the below to use the script to generate the installer image:
 * All [prerequisites of the OpenWrt ImageBuilder](https://openwrt.org/docs/guide-user/additional-software/imagebuilder#prerequisites) 
@@ -65,8 +65,8 @@ This will remove any user configuration and allow restoring or upgrading from [s
 
 ## Device flash backup procedure while running the stock firmware or non-UBI OpenWrt build
 
-1. Flash `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb` (note that this file doesn't have the word _installer_ in it's filename)
-2. Login and navigate to __System__, save a copy of each of the `mtdblock`.
+1. Flash `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb` (note that this file doesn't have the word _installer_ in its filename)
+2. Login, and navigate to __System__, and save a copy of each of the `mtdblock`.
 3. In case of failure (because of ECC/OOB interoperability problems between the old and new SPI-NAND driver), connect to the device via SSH and enter the following commands:
 
 ```
@@ -84,7 +84,7 @@ After this, do not attempt to flash `openwrt-mediatek-mt7622-linksys_e8450-ubi-i
 
 **If you have used v0.6.1 or later of installer, skip step #1 and just boot into on-flash recovery/initramfs instead.**
 
-1. Boot into recovery mode, either by flashing `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb` (note that this file doesn't have the word _installer_ in it's filename) *or* by holding the RESET button while connecting the device to power *or* by issueing `echo c > /proc/sysrq-trigger` while running the production firmware. 
+1. Boot into recovery mode, either by flashing `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb` (note that this file doesn't have the word _installer_ in its filename) *or* by holding the RESET button while connecting the device to power *or* by issuing `echo c > /proc/sysrq-trigger` while running the production firmware. 
 2. Use *scp* to copy the original/vendor bootchain (*mtdx* files) to the device's */tmp* folder
 2. Connect to the device via SSH and enter the following commands:
 
