@@ -22,6 +22,12 @@ You'll need the below to use the script to generate the installer image:
 If you are not interested in building yourself, the pre-built files are available [here](https://github.com/dangowrt/linksys-e8450-openwrt-installer/releases).
 
 ## Installing OpenWrt
+
+#### Upstream firmware version 1.1 and newer rejects the installer image. As a temporaty workaround, please downgrade to version 1.0 before running the installer.
+
+ * For Linksys E8450 [FW_E8450_1.0.01.101415_prod.img](https://downloads.linksys.com/support/assets/firmware/FW_E8450_1.0.01.101415_prod.img)
+ * For Belkin RT3200 [FW_RT3200_1.0.01.101415_prod.img](https://www.belkin.com/support/assets/belkin/firmware/FW_RT3200_1.0.01.101415_prod.img)
+
 #### Assuming the device is running stock firmware, and is brand new or just after factory reset.
 
 1. Connect any of the LAN ports of the device directly to the Ethernet port of your computer.
