@@ -4,20 +4,22 @@ https://user-images.githubusercontent.com/82453643/147394017-e7af122c-8234-4f11-
 
 *Showing the installation process. The window on the right displays the serial RX interface for documentation purpose only. The interaction required is shown on the left, which is done entirely within the web browser.*
 
-This script downloads the OpenWrt ImageBuilder to generate a release-like (i.e. LuCI included) *sysupgrade* image. The process involves re-packaging the *initramfs* image to contain everything necessary for a permanent recovery image within the NAND flash, including the installer script and the prerequisite installation images.
-
 **WARNING #1** This will replace the bootloader (TF-A 2.4, U-Boot 2021.10) and convert the flash layout of the device to [UBI](https://github.com/dangowrt/linksys-e8450-openwrt-installer/issues/9). The installer stores a copy of the previous bootchain in a dedicated UBI volume `boot_backup`.
 
 **WARNING #2** Re-flashing the installer when the device is already using UBI flash layout will erase the previously backed up bootchain, which in most cases would be the vendor/official one.
 
 It's recommended that you make a **complete backup** of the device flash __**before**__ running the installer. (see below "[Device flash backup procedure while running the stock firmware version 1.0](#device-flash-backup-procedure-while-running-the-stock-firmware-version-10)")
 
+### Script information
+
+This script downloads the OpenWrt ImageBuilder to generate a release-like (i.e. LuCI included) *sysupgrade* image. The process involves re-packaging the *initramfs* image to contain everything necessary for a permanent recovery image within the NAND flash, including the installer script and the prerequisite installation images.
+
 You'll need the below to use the script to generate the installer image:
 * All [prerequisites of the OpenWrt ImageBuilder](https://openwrt.org/docs/guide-user/additional-software/imagebuilder#prerequisites) 
 * `libfdt-dev`
 * `cmake`
 
-If you are not interested in building yourself, the pre-built files are available [here](https://github.com/dangowrt/linksys-e8450-openwrt-installer/releases).
+**If you are not interested in building yourself**, the pre-built files are available [here](https://github.com/dangowrt/linksys-e8450-openwrt-installer/releases).
 
 ## Downgrade firmware
 
@@ -39,7 +41,7 @@ for part in mtd[0123] ; do
 done
 ```
 
-4. Then, copy the resulting **mtdx** files found in the `/tmp` folder on the router to the computer using **scp** (make sure the size of the files is the same, when you copy them to the computer).
+4. Then, copy the resulting **mtdx** files found in the `/tmp` folder on the router to the computer using **scp** (the size of the *mtd3* file has to be **125MB** and make sure the size of the other files is the same, when you copy them to the computer).
 5. **Perform a powercycle** to reboot into the original non-ubi firmware (**to perform a powercycle**, unplug the device from the power source for about 30 seconds before plugging it back).
 6. When the device is running **original/vendor firmware**, perform a factory reset.
 
@@ -68,7 +70,7 @@ Do not attempt to flash `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-rec
 SNAPSHOTS ARE LARGELY UNTESTED!
 PROCEED AT YOUR OWN RISK!
 
-1. Backup the original/vendor bootchain
+1. Backup the original/vendor bootchain (**does not include original/vendor firmware**).
 
    Connect to the device via SSH and enter the following commands:
 
@@ -92,7 +94,7 @@ This will remove any user configuration and allow restoring or upgrading from [s
 ## Restoring the vendor/official firmware ##
 
 1. Boot into recovery mode, either by flashing `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb` (note that this file doesn't have the word _installer_ in its filename) *or* by holding the RESET button while connecting the device to power *or* by issuing `echo c > /proc/sysrq-trigger` while running the production firmware. 
-2. Use *scp* to copy the *mtdx* files to the `/tmp` folder on the router ([the backup that you have on your computer](#device-flash-backup-procedure-while-running-the-stock-firmware-version-10)), which is the **original/vendor bootchain and firmware** (the size of the *mtd3* file has to be **125MB** and make sure the size of the other files is the same, when you copy them to the router).
+2. Use *scp* to copy the *mtdx* files to the `/tmp` folder on the router (the [complete backup](#device-flash-backup-procedure-while-running-the-stock-firmware-version-10) that you have on your computer), which is the **original/vendor bootchain and firmware** (the size of the *mtd3* file has to be **125MB** and make sure the size of the other files is the same, when you copy them to the router).
 3. Connect to the device via SSH and enter the following commands:
 
 ```
@@ -108,4 +110,4 @@ mtd write /tmp/mtd3 /dev/mtd3
 5. **Perform a powercycle** to reboot into the original non-ubi firmware (**to perform a powercycle**, unplug the device from the power source for about 30 seconds before plugging it back).
 6. When the device is running **original/vendor firmware**, [flash the original/vendor firmware](#downgrade-firmware) and then perform a factory reset.
 
-**Note:** In case you don't have a **complete backup** of the router (*mtd3* file size is not **125MB**), ask someone to share their *mtd3* file with you or **use the normal backup that you have** and then use TFTP to flash the vendor firmware according to [this procedure](https://www.linksys.com/us/support-article?articleNum=137928). (Not tested)
+**Note:** In case you don't have a **[complete backup](#device-flash-backup-procedure-while-running-the-stock-firmware-version-10)** of the router (*mtd3* file size is **125MB**), **use the files from the [minimal backup](#upgrading-to-the-latest-openwrt-snapshot)** (*mtd3* file size is **2MB**) and then use TFTP to flash the vendor firmware according to [this procedure](https://www.linksys.com/us/support-article?articleNum=137928). (I have not tested it)
