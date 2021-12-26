@@ -39,7 +39,7 @@ for part in mtd[0123] ; do
 done
 ```
 
-4. Then, copy the resulting **mtdx** files found in the `/tmp` folder on the router to the computer using **scp** (make sure the files weigh the same, when you copy them to the computer).
+4. Then, copy the resulting **mtdx** files found in the `/tmp` folder on the router to the computer using **scp** (make sure the size of the files is the same, when you copy them to the computer).
 5. **Perform a powercycle** to reboot into the original non-ubi firmware (**to perform a powercycle**, unplug the device from the power source for about 30 seconds before plugging it back).
 6. When the device is running **original/vendor firmware**, perform a factory reset.
 
