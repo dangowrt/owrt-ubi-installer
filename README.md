@@ -6,8 +6,6 @@ https://user-images.githubusercontent.com/82453643/147394017-e7af122c-8234-4f11-
 
 This script downloads the OpenWrt ImageBuilder to generate a release-like (i.e. LuCI included) *sysupgrade* image. The process involves re-packaging the *initramfs* image to contain everything necessary for a permanent recovery image within the NAND flash, including the installer script and the prerequisite installation images.
 
-The resulting file `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb` can be flashed via the vendor/official firmware web interface, as well as OpenWrt firmware running non-UBI builds (by running `sysupgrade -F openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb`).
-
 **WARNING #1** This will replace the bootloader (TF-A 2.4, U-Boot 2021.10) and convert the flash layout of the device to [UBI](https://github.com/dangowrt/linksys-e8450-openwrt-installer/issues/9). The installer stores a copy of the previous bootchain in a dedicated UBI volume `boot_backup`.
 
 **WARNING #2** Re-flashing the installer when the device is already using UBI flash layout will erase the previously backed up bootchain, which in most cases would be the vendor/official one.
