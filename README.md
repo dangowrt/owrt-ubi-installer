@@ -94,7 +94,7 @@ This will remove any user configuration and allow restoring or upgrading from [s
 ## Restoring the vendor/official firmware ##
 
 1. Boot into recovery mode, either by flashing `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb` (note that this file doesn't have the word _installer_ in its filename) *or* by holding the RESET button while connecting the device to power *or* by issuing `echo c > /proc/sysrq-trigger` while running the production firmware. 
-2. Use *scp* to copy the *mtdx* files to the `/tmp` folder on the router (the [complete backup](#device-flash-backup-procedure-while-running-the-stock-firmware-version-10) that you have on your computer), which is the **original/vendor bootchain and firmware** (the size of the *mtd3* file has to be **125MB** and make sure the size of the other files is the same, when you copy them to the router).
+2. Use *scp* to copy the *mtdx* files to the `/tmp` folder on the router (the [complete backup](#device-flash-backup-procedure-while-running-the-stock-firmware-version-10) that you have on your computer), which is the **original/vendor bootchain and firmware** (the size of the *mtd3* file has to be **125MB** and make sure the size of the other files is the same, when you copy them to the router). In case you only got the **[minimal backup](#upgrading-to-the-latest-openwrt-snapshot)**, also upload the **[vendor firmware](#downgrade-firmware)**.
 3. Connect to the device via SSH and enter the following commands:
 
 ```
@@ -105,9 +105,14 @@ mtd write /tmp/mtd1 /dev/mtd1
 mtd write /tmp/mtd2 /dev/mtd2
 mtd write /tmp/mtd3 /dev/mtd3
 ```
+3a. In case you were using the **[minimal backup](#upgrading-to-the-latest-openwrt-snapshot)** files, now write the main firmware:
+```
+# on Linksys E8450
+mtd -p 0x200000 write /dev/mtd3 FW_E8450_1.0.01.101415_prod.img
+# on Belkin RT3200
+mtd -p 0x200000 write /dev/mtd3 FW_RT3200_1.0.01.101415_prod.img
+```
 
 4. Reboot the device and wait about a minute for it to be ready.
-5. **Perform a powercycle** to reboot into the original non-ubi firmware (**to perform a powercycle**, unplug the device from the power source for about 30 seconds before plugging it back).
-6. When the device is running **original/vendor firmware**, [flash the original/vendor firmware](#downgrade-firmware) and then perform a factory reset.
 
-**Note:** In case you don't have a **[complete backup](#device-flash-backup-procedure-while-running-the-stock-firmware-version-10)** of the router (*mtd3* file size is **125MB**), **use the files from the [minimal backup](#upgrading-to-the-latest-openwrt-snapshot)** (*mtd3* file size is **2MB**) and then use TFTP to flash the vendor firmware according to [this procedure](https://www.linksys.com/us/support-article?articleNum=137928). (I have not tested it)
+**Note:** Be prepared to connect the serial console as bad blocks are **not** handled in the way the stock firmware and loader expects it. Ie. if you are lucky enough to own a device which got a bad block in the first ~22MiB of the SPI-NAND flash, then you will need to flash using TFTP which can only be triggered using the boot menu accessible via the serial console.
