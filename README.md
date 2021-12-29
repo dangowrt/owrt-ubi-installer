@@ -117,10 +117,10 @@ mtd write /tmp/mtd3 /dev/mtd3
 In case you were using the [**minimal backup**](#upgrading-to-the-latest-openwrt-snapshot) files, now write the **original/vendor firmware**:
 ```
 # On Linksys E8450
-mtd -p 0x200000 write FW_E8450_1.0.01.101415_prod.img /dev/mtd3
+mtd -p 0x200000 write /tmp/FW_E8450_1.0.01.101415_prod.img /dev/mtd3
 
 # On Belkin RT3200
-mtd -p 0x200000 write FW_RT3200_1.0.01.101415_prod.img /dev/mtd3
+mtd -p 0x200000 write /tmp/FW_RT3200_1.0.01.101415_prod.img /dev/mtd3
 ```
 4. Reboot the device and wait about a minute for it to be ready.
 5. If you use the [**complete backup**](#device-flash-backup-procedure-while-running-the-stock-firmware-version-10), after reboot the router will boot into the **initramfs system** and need **perform a powercycle** to reboot into the original/vendor firmware (**to perform a powercycle**, unplug the device from the power source for about 30 seconds before plugging it back).
