@@ -107,9 +107,9 @@ mtd write /tmp/mtd3 /dev/mtd3
 In case you were using the **[minimal backup](#upgrading-to-the-latest-openwrt-snapshot)** files, now write the main firmware:
 ```
 # on Linksys E8450
-mtd -p 0x200000 write /dev/mtd3 FW_E8450_1.0.01.101415_prod.img
+mtd -p 0x200000 write FW_E8450_1.0.01.101415_prod.img /dev/mtd3
 # on Belkin RT3200
-mtd -p 0x200000 write /dev/mtd3 FW_RT3200_1.0.01.101415_prod.img
+mtd -p 0x200000 write FW_RT3200_1.0.01.101415_prod.img /dev/mtd3
 ```
 4. Reboot the device and wait about a minute for it to be ready.
 
