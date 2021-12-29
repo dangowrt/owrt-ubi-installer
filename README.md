@@ -123,6 +123,6 @@ mtd -p 0x200000 write /tmp/FW_E8450_1.0.01.101415_prod.img /dev/mtd3
 mtd -p 0x200000 write /tmp/FW_RT3200_1.0.01.101415_prod.img /dev/mtd3
 ```
 4. Reboot the device and wait about a minute for it to be ready.
-5. If you use the [**complete backup**](#device-flash-backup-procedure-while-running-the-stock-firmware-version-10), after reboot the router will boot into the **initramfs system**, you will need **perform a powercycle** to reboot into the original/vendor firmware (**to perform a powercycle**, unplug the device from the power source for about 30 seconds before plugging it back).
+5. If you use the [**complete backup**](#device-flash-backup-procedure-while-running-the-stock-firmware-version-10), after rebooting, the router will boot into the **initramfs system**, you will need **perform a powercycle** to reboot into the original/vendor firmware (**to perform a powercycle**, unplug the device from the power source for about 30 seconds before plugging it back).
 
 **Note:** Be prepared to connect the serial console as bad blocks are **not** handled in the way the stock firmware and loader expects it. Ie. if you are lucky enough to own a device which got a bad block in the first ~22MiB of the SPI-NAND flash, then you will need to flash using TFTP which can only be triggered using the boot menu accessible via the serial console.
