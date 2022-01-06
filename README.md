@@ -12,11 +12,10 @@ It's recommended that you make a **complete backup** of the device flash __**bef
 
 ## Table of Contents
 * [Script information](#script-information)
-* [Downgrade firmware](#downgrade-firmware)
-* [Device flash complete backup procedure](#device-flash-complete-backup-procedure)
 * [Installing OpenWrt](#installing-openwrt)
 * [Upgrading to the latest OpenWrt snapshot](#upgrading-to-the-latest-openwrt-snapshot)
 * [Enter recovery mode under OpenWrt](#enter-recovery-mode-under-openwrt)
+* [Device flash complete backup procedure](#device-flash-complete-backup-procedure)
 * [Restoring the vendor/official firmware](#restoring-the-vendorofficial-firmware)
 
 
@@ -31,37 +30,19 @@ You'll need the below to use the script to generate the installer image:
 
 **If you are not interested in building yourself**, the pre-built files are available [here](https://github.com/dangowrt/linksys-e8450-openwrt-installer/releases).
 
-## Downgrade firmware
+## Installing OpenWrt
+
+### Downgrade firmware
 
 #### Upstream firmware version 1.1 and newer rejects the installer image. As a temporary workaround, please downgrade to version 1.0 before running the installer.
 
  * For Linksys E8450 [FW_E8450_1.0.01.101415_prod.img](https://downloads.linksys.com/support/assets/firmware/FW_E8450_1.0.01.101415_prod.img)
  * For Belkin RT3200 [FW_RT3200_1.0.01.101415_prod.img](https://www.belkin.com/support/assets/belkin/firmware/FW_RT3200_1.0.01.101415_prod.img)
 
-## Device flash complete backup procedure
-
-#### Assuming the device is running stock firmware version 1.0
-
-1. Flash `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb` (note that this file doesn't have the word _installer_ in its filename)
-2. Login [http://192.168.1.1](http://192.168.1.1/cgi-bin/luci/admin/system/flash), then navigate to **System -> Backup / Flash Firmware** and save a copy of each of the `mtdblock`.
-3. Now we are going to make a **complete backup** of the device (**includes original/vendor firmware**), connect to the device via SSH and enter the following commands:
-
-```
-cd /dev
-for part in mtd[0123] ; do
-  dd if=$part of=/tmp/$part
-done
-```
-
-4. Then, copy the resulting **mtdx** files found in the `/tmp` folder on the router to the computer using **scp** or [WinSCP](https://winscp.net/eng/downloads.php) (the size of the *mtd3* file has to be **125MB** and make sure the size of the other files is the same, when you copy them to the computer).
-5. **Perform a powercycle** to reboot into the original/vendor firmware (**to perform a powercycle**, unplug the device from the power source for about 30 seconds before plugging it back).
-6. When the device is running **original/vendor firmware**, perform a factory reset.
-
-Do not attempt to flash `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb` from the running **initramfs system** -- it will fail to reboot, possibly requiring serial console access. Instead, **powercycle** the device to reboot into the original non-ubi firmware, and then flash the `installer` version.
-
-## Installing OpenWrt
 
 #### Assuming the device is running stock firmware version 1.0, and is brand new or just after factory reset.
+
+**To be 100% on the safe side consider doing the [complete backup procedure](#device-flash-complete-backup-procedure) before proceeding with the installation.**
 
 1. Connect any of the LAN ports of the device directly to the Ethernet port of your computer.
 2. Set the IP address of your computer as `192.168.1.254` with netmask `255.255.255.0`, no gateway, no DNS.
@@ -97,11 +78,52 @@ PROCEED AT YOUR OWN RISK!
 
 ## Enter recovery mode under OpenWrt
 
+
+#### Using the RESET button:
+
 1. Hold down the "reset" button (below the "WPS" button) whilst powering on the device.
+
 2. Release the button once the power LED turns into orange/yellow.
 
 This will remove any user configuration and allow restoring or upgrading from [ssh](https://openwrt.org/docs/guide-user/installation/sysupgrade.cli)/http/[tftp](https://openwrt.org/docs/guide-user/installation/generic.flashing.tftp).
 
+#### Using PSTORE/ramoops
+
+1. While running the production firmware enter this command in the shell
+
+   ```
+   echo c > /proc/sysrq-trigger
+   ```
+
+2. Once the router has rebooted into recovery mode, clear PSTORE to make it reboot into production mode again:
+
+   ```
+   rm /sys/fs/pstore/*
+   ```
+
+This keep user configuration but still allow restoring or upgrading from [ssh](https://openwrt.org/docs/guide-user/installation/sysupgrade.cli)/http/[tftp](https://openwrt.org/docs/guide-user/installation/generic.flashing.tftp).
+
+
+## Device flash complete backup procedure
+
+#### Assuming the device is running stock firmware version 1.0
+
+1. Flash `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb` (note that this file doesn't have the word _installer_ in its filename)
+2. Login [http://192.168.1.1](http://192.168.1.1/cgi-bin/luci/admin/system/flash), then navigate to **System -> Backup / Flash Firmware** and save a copy of each of the `mtdblock`.
+3. Now we are going to make a **complete backup** of the device (**includes original/vendor firmware**), connect to the device via SSH and enter the following commands:
+
+```
+cd /dev
+for part in mtd[0123] ; do
+  dd if=$part of=/tmp/$part
+done
+```
+
+4. Then, copy the resulting **mtdx** files found in the `/tmp` folder on the router to the computer using **scp** or [WinSCP](https://winscp.net/eng/downloads.php) (the size of the *mtd3* file has to be **125MB** and make sure the size of the other files is the same, when you copy them to the computer).
+5. **Perform a powercycle** to reboot into the original/vendor firmware (**to perform a powercycle**, unplug the device from the power source for about 30 seconds before plugging it back).
+6. When the device is running **original/vendor firmware**, perform a factory reset.
+
+Do not attempt to flash `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb` from the running **initramfs system** -- it will fail to reboot, possibly requiring serial console access. Instead, **powercycle** the device to reboot into the original non-ubi firmware, and then flash the `installer` version.
 
 ## Restoring the vendor/official firmware ##
 
