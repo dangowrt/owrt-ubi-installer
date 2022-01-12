@@ -109,21 +109,27 @@ This keep user configuration but still allow restoring or upgrading from [ssh](h
 #### Assuming the device is running stock firmware version 1.0
 
 1. Flash `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb` (note that this file doesn't have the word _installer_ in its filename)
-2. Login [http://192.168.1.1](http://192.168.1.1/cgi-bin/luci/admin/system/flash), then navigate to **System -> Backup / Flash Firmware** and save a copy of each of the `mtdblock`.
-3. Now we are going to make a **complete backup** of the device (**includes original/vendor firmware**), connect to the device via SSH and enter the following commands:
+2. Backup
+   
+   - Via LuCi web-interface
+      - Login [http://192.168.1.1](http://192.168.1.1/cgi-bin/luci/admin/system/flash), then navigate to **System -> Backup / Flash Firmware** and save a copy of each of the `mtdblock`. **Resist the temptation to flash anything from this page! You will likely need serial console access to repair the device.** Make sure the `mtdblock` file size make sense as users have reported that they found their files have 0 bytes. In that case backup via `SSH` (see below) as an alternate method to backup the `mtdblock` files.
+   
+   - Via SSH (alternate backup method)
+   
+      - We are going to make a **complete backup** of the device (**includes original/vendor firmware**), connect to the device via SSH and enter the following commands:
 
-```
-cd /dev
-for part in mtd[0123] ; do
-  dd if=$part of=/tmp/$part
-done
-```
+         ```
+         cd /dev
+         for part in mtd[0123] ; do
+         dd if=$part of=/tmp/$part
+         done
+         ```
 
-4. Then, copy the resulting **mtdx** files found in the `/tmp` folder on the router to the computer using **scp** or [WinSCP](https://winscp.net/eng/downloads.php) (the size of the *mtd3* file has to be **125MB** and make sure the size of the other files is the same, when you copy them to the computer).
-5. **Perform a powercycle** to reboot into the original/vendor firmware (**to perform a powercycle**, unplug the device from the power source for about 30 seconds before plugging it back).
-6. When the device is running **original/vendor firmware**, perform a factory reset.
+      - Then, copy the resulting **mtdx** files found in the `/tmp` folder on the router to the computer using **scp** or [WinSCP](https://winscp.net/eng/downloads.php) (the size of the *mtd3* file has to be **125MB** and make sure the size of the other files is the same, when you copy them to the computer).
+3. **Perform a powercycle** to reboot into the original/vendor firmware (**to perform a powercycle**, unplug the device from the power source for about 30 seconds before plugging it back). In case the router does not reboot into the original/vendor firmware, but back into the OpenWrt initramfs system, don't worry (this may happen). Try another powercycle, or the `reboot` command via SSH. But don't try to go back to original/vendor firmware by flashing a firmware image!
+4. When the device is running **original/vendor firmware**, perform a factory reset.
 
-Do not attempt to flash `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb` from the running **initramfs system** -- it will fail to reboot, possibly requiring serial console access. Instead, **powercycle** the device to reboot into the original non-ubi firmware, and then flash the `installer` version.
+**Do not attempt to flash anything** (that includes the stock firmware, `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb` etc.) from the running **initramfs system** -- it will fail to reboot, possibly requiring serial console access. Instead, **powercycle** the device to reboot into the original non-ubi firmware, and then flash the `installer` version.
 
 ## Restoring the vendor/official firmware ##
 
