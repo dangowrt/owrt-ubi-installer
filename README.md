@@ -8,7 +8,7 @@ https://user-images.githubusercontent.com/82453643/147394017-e7af122c-8234-4f11-
 
 **WARNING #2** Re-flashing the installer when the device is already using UBI flash layout will erase the previously backed up bootchain, which in most cases would be the vendor/official one.
 
-It's recommended that you make a **complete backup** of the device flash __**before**__ running the installer. (see below "[Device flash complete backup procedure](#device-flash-complete-backup-procedure)")
+If you plan to ever go back to the stock firmware, it's recommended that you make a **complete backup** of the device flash __**before**__ running the installer. (see below "[Device flash complete backup procedure](#device-flash-complete-backup-procedure)")
 
 ## Table of Contents
 * [Script information](#script-information)
