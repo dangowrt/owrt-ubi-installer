@@ -56,6 +56,7 @@ You'll need the below to use the script to generate the installer image:
 9. Navigate to __System__ -> __Backup / Flash Firmware__.
 10. Upload `openwrt-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb`.
 12. The device will reboot, you may proceed to setup OpenWrt.
+13. Follow the [post install tips in the OpenWrt Wiki](https://openwrt.org/toh/linksys/e8450#post_install_tips). You may proceed to setup OpenWrt.
 
 ## Upgrading to the latest OpenWrt snapshot 
 
