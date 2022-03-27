@@ -18,6 +18,7 @@ UNFIT="${INSTALLERDIR}/unfit"
 	exit 0
 }
 
+SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct -C "${INSTALLERDIR}")
 DTC=
 FILEBASE=
 WORKDIR=
@@ -44,6 +45,7 @@ run_openwrt_ib() {
 		exit 1
 	}
 	cd $OPENWRT_DIR
+	sed -i 's/CONFIG_SIGNATURE_CHECK=y/# CONFIG_SIGNATURE_CHECK is not set/' .config
 	make image PROFILE=linksys_e8450-ubi PACKAGES="$OPENWRT_UPG_PACKAGES"
 }
 
@@ -146,8 +148,10 @@ extract_initrd() {
 
 repack_initrd() {
 	[ -d "${WORKDIR}/initrd" ] || return 1
+	find "${WORKDIR}/initrd" -newermt "@${SOURCE_DATE_EPOCH}" -print0 |
+		xargs -0r touch --no-dereference --date="@${SOURCE_DATE_EPOCH}"
 	echo "re-compressing initrd..."
-	( cd "${WORKDIR}/initrd" ; find . | "${CPIO}" -o -H newc -R 0:0 | "${XZ}" -c -9  --check=crc32 > "${WORKDIR}/initrd-1" )
+	( cd "${WORKDIR}/initrd" ; find . | LC_ALL=C sort | "${CPIO}" --reproducible -o -H newc -R 0:0 | "${XZ}" -T0 -c -9  --check=crc32 > "${WORKDIR}/initrd-1" )
 	return 0
 }
 
