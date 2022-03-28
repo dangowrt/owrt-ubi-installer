@@ -2,7 +2,7 @@
 
 DESTDIR="$PWD"
 
-OPENWRT_PGP="0xCD84BCED626471F1"
+OPENWRT_PGP="0xCD54E82DADB3684D"
 KEYSERVER="keyserver.ubuntu.com"
 INSTALLERDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 OPENWRT_DIR="${INSTALLERDIR}/openwrt-ib"
@@ -232,10 +232,11 @@ bundle_initrd() {
 }
 
 linksys_e8450_installer() {
-	OPENWRT_TARGET="https://downloads.openwrt.org/snapshots/targets/mediatek/mt7622"
-	OPENWRT_IB="openwrt-imagebuilder-mediatek-mt7622.Linux-x86_64.tar.xz"
-	OPENWRT_INITRD="openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
-	OPENWRT_REMOVE_PACKAGES="wpad-basic-wolfssl libustream-wolfssl* libwolfssl* px5g-wolfssl"
+	OPENWRT_TARGET="https://downloads.openwrt.org/releases/22.03-SNAPSHOT/targets/mediatek/mt7622"
+	OPENWRT_IB="openwrt-imagebuilder-22.03-SNAPSHOT-mediatek-mt7622.Linux-x86_64.tar.xz"
+	owrt_version="$(wget -q -O - https://downloads.openwrt.org/releases/22.03-SNAPSHOT/targets/mediatek/mt7622/version.buildinfo)"
+	OPENWRT_INITRD="openwrt-22.03-snapshot-${owrt_version}-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
+	OPENWRT_REMOVE_PACKAGES="luci-ssl wpad-basic-wolfssl libustream-wolfssl* px5g-wolfssl libwolfssl*"
 	OPENWRT_ADD_PACKAGES=""
 	OPENWRT_ADD_REC_PACKAGES="wpad-openssl libustream-openssl luci luci-ssl-openssl luci-theme-openwrt-2020 kmod-mtd-rw"
 	OPENWRT_ENABLE_SERVICE="uhttpd wpad"
@@ -243,7 +244,7 @@ linksys_e8450_installer() {
 	OPENWRT_UPG_PACKAGES="auc blockd kmod-usb-storage kmod-usb-storage-uas kmod-fs-vfat \
 				kmod-nls-base kmod-nls-cp437 kmod-nls-iso8859-1 kmod-nls-utf8 \
 				kmod-fs-ext4 kmod-fs-f2fs kmod-fs-exfat \
-				luci luci-ssl-openssl luci-theme-openwrt-2020 luci-app-attendedsysupgrade \
+				luci luci-ssl-openssl luci-theme-openwrt-2020 luci-app-attendedsysupgrade -luci-ssl \
 				-libustream-wolfssl -wpad-basic-wolfssl -px5g-wolfssl libustream-openssl wpad-openssl \
 				$OPENWRT_ADD_PACKAGES"
 
@@ -251,7 +252,7 @@ linksys_e8450_installer() {
 	BINDIR="${OPENWRT_DIR}/bin/targets/mediatek/mt7622"
 	[ -d "$BINDIR" ] || exit 1
 
-	mv "${BINDIR}/openwrt-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb" "${DESTDIR}"
+	mv "${BINDIR}/openwrt-22.03-snapshot-${owrt_version}-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb" "${DESTDIR}"
 
 	bundle_initrd recovery "${INSTALLERDIR}/dl/${OPENWRT_INITRD}"
 
@@ -260,8 +261,8 @@ linksys_e8450_installer() {
 
 
 	bundle_initrd installer "${INSTALLERDIR}/dl/${OPENWRT_INITRD}" \
-		"${BINDIR}/openwrt-mediatek-mt7622-linksys_e8450-ubi-preloader.bin" \
-		"${BINDIR}/openwrt-mediatek-mt7622-linksys_e8450-ubi-bl31-uboot.fip" \
+		"${BINDIR}/openwrt-22.03-snapshot-${owrt_version}-mediatek-mt7622-linksys_e8450-ubi-preloader.bin" \
+		"${BINDIR}/openwrt-22.03-snapshot-${owrt_version}-mediatek-mt7622-linksys_e8450-ubi-bl31-uboot.fip" \
 		"${DESTDIR}/${FILEBASE}.itb"
 
 	mv "${WORKDIR}/${FILEBASE}-installer.itb" "${DESTDIR}"
