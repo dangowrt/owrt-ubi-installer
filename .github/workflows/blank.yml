@@ -48,14 +48,20 @@ jobs:
           draft: false
           prerelease: false
 
+      - name: Determine filenames
+        run: |
+          echo "SYSUPGRADE_ITB=$(ls -1 | grep sysupgrade.itb)" >> "$GITHUB_ENV"
+          echo "RECOVERY_ITB=$(ls -1 | grep recovery.itb)" >> "$GITHUB_ENV"
+          echo "INSTALLER_ITB=$(ls -1 | grep installer.itb)" >> "$GITHUB_ENV"
+
       - name: Upload sysupgrade
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./openwrt-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb
-          asset_name: openwrt-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb
+          asset_path: ./${{ env.SYSUPGRADE_ITB }}
+          asset_name: ${{ env.SYSUPGRADE_ITB }}
           asset_content_type: application/octet-stream
 
       - name: Upload recovery
@@ -64,10 +70,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb
-          asset_name: openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb
+          asset_path: ./${{ env.RECOVERY_ITB }}
+          asset_name: ${{ env.RECOVERY_ITB }}
           asset_content_type: application/octet-stream
-
 
       - name: Upload recovery installer
         uses: actions/upload-release-asset@v1
@@ -75,7 +80,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb
-          asset_name: openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb
+          asset_path: ./${{ env.INSTALLER_ITB }}
+          asset_name: ${{ env.INSTALLER_ITB }}
           asset_content_type: application/octet-stream
 
