@@ -48,34 +48,10 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: Upload sysupgrade
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release
+        uses: softprops/action-gh-release@v1
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./openwrt-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb
-          asset_name: openwrt-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb
-          asset_content_type: application/octet-stream
-
-      - name: Upload recovery
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb
-          asset_name: openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb
-          asset_content_type: application/octet-stream
-
-
-      - name: Upload recovery installer
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb
-          asset_name: openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb
-          asset_content_type: application/octet-stream
-
+          files: |
+            openwrt*-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb
+            openwrt*-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb
+            openwrt*-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb
