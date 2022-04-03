@@ -23,6 +23,7 @@ DTC=
 FILEBASE=
 WORKDIR=
 ITSFILE=
+OPENWRT_ADD_PACKAGES=$*
 
 run_openwrt_ib() {
 	mkdir -p "${INSTALLERDIR}/dl"
@@ -237,7 +238,6 @@ linksys_e8450_installer() {
 	owrt_version="$(wget -q -O - https://downloads.openwrt.org/releases/22.03-SNAPSHOT/targets/mediatek/mt7622/version.buildinfo)"
 	OPENWRT_INITRD="openwrt-22.03-snapshot-${owrt_version}-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
 	OPENWRT_REMOVE_PACKAGES="luci-ssl wpad-basic-wolfssl libustream-wolfssl* px5g-wolfssl libwolfssl*"
-	OPENWRT_ADD_PACKAGES=""
 	OPENWRT_ADD_REC_PACKAGES="wpad-openssl libustream-openssl luci luci-ssl-openssl luci-theme-openwrt-2020 kmod-mtd-rw"
 	OPENWRT_ENABLE_SERVICE="uhttpd wpad"
 

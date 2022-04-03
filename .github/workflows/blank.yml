@@ -2,7 +2,7 @@
 
 name: CI
 
-# Controls when the action will run. 
+# Controls when the action will run.
 on:
   push:
     # Triggers on every tag starting with v
@@ -11,6 +11,11 @@ on:
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+    inputs:
+      openwrtAddPackages:
+        description: "Additonal packages"
+        required: false
+        default: ""
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -28,7 +33,7 @@ jobs:
         run: sudo apt install libfdt-dev cmake
 
       - name: Run builder script
-        run: mkdir -m 0700 $HOME/.gnupg ; bash build_installer.sh
+        run: mkdir -m 0700 $HOME/.gnupg ; bash build_installer.sh "${{ github.event.inputs.openwrtAddPackages }}"
 
 #      - name: Store created images
 #        uses: actions/upload-artifact@v2
@@ -83,4 +88,3 @@ jobs:
           asset_path: ./${{ env.INSTALLER_ITB }}
           asset_name: ${{ env.INSTALLER_ITB }}
           asset_content_type: application/octet-stream
-
