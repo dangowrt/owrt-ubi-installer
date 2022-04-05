@@ -9,9 +9,9 @@ echo OpenWrt UBI installer
 echo
 
 INSTALLER_DIR="/installer"
-PRELOADER="$INSTALLER_DIR/openwrt-mediatek-mt7622-linksys_e8450-ubi-preloader.bin"
-FIP="$INSTALLER_DIR/openwrt-mediatek-mt7622-linksys_e8450-ubi-bl31-uboot.fip"
-RECOVERY="$INSTALLER_DIR/openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
+PRELOADER="$INSTALLER_DIR/mt7622-snand-1ddr-bl2.img"
+FIP="$INSTALLER_DIR/mt7622_linksys_e8450-u-boot.fip"
+RECOVERY="$INSTALLER_DIR/openwrt-*mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
 HAS_ENV=1
 
 if [ ! -s "$PRELOADER" ] || [ ! -s "$FIP" ] || [ ! -s "$RECOVERY" ]; then

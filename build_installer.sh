@@ -24,7 +24,7 @@ FILEBASE=
 WORKDIR=
 ITSFILE=
 
-run_openwrt_ib() {
+prepare_openwrt_ib() {
 	mkdir -p "${INSTALLERDIR}/dl"
 	cd "${INSTALLERDIR}/dl"
 	gpg --no-default-keyring--keyring "${INSTALLERDIR}/openwrt-keyring" --list-key $OPENWRT_PGP 1>/dev/null 2>/dev/null || gpg --no-default-keyring --keyring "${INSTALLERDIR}/openwrt-keyring" --keyserver ${KEYSERVER}  --recv-key $OPENWRT_PGP
@@ -33,8 +33,9 @@ run_openwrt_ib() {
 	wget "${OPENWRT_TARGET}/sha256sums.asc"
 	wget "${OPENWRT_TARGET}/sha256sums"
 	gpg --no-default-keyring --keyring "${INSTALLERDIR}/openwrt-keyring" --verify sha256sums.asc sha256sums || exit 1
-	sha256sum -c sha256sums --ignore-missing || rm -f  "$OPENWRT_INITRD" "$OPENWRT_IB"
+	sha256sum -c sha256sums --ignore-missing || rm -f  "$OPENWRT_SYSUPGRADE" "$OPENWRT_IB" "$OPENWRT_INITRD"
 	wget -c "${OPENWRT_TARGET}/${OPENWRT_INITRD}"
+	wget -c "${OPENWRT_TARGET}/${OPENWRT_SYSUPGRADE}"
 	wget -c "${OPENWRT_TARGET}/${OPENWRT_IB}"
 	sha256sum -c sha256sums --ignore-missing || exit 1
 	mkdir -p "${OPENWRT_DIR}" || exit 1
@@ -44,9 +45,6 @@ run_openwrt_ib() {
 		echo "can't find dtc executable in OpenWrt IB"
 		exit 1
 	}
-	cd $OPENWRT_DIR
-	sed -i 's/CONFIG_SIGNATURE_CHECK=y/# CONFIG_SIGNATURE_CHECK is not set/' .config
-	make image PROFILE=linksys_e8450-ubi PACKAGES="$OPENWRT_UPG_PACKAGES"
 }
 
 its_add_data() {
@@ -236,33 +234,20 @@ linksys_e8450_installer() {
 	OPENWRT_IB="openwrt-imagebuilder-22.03-SNAPSHOT-mediatek-mt7622.Linux-x86_64.tar.xz"
 	owrt_version="$(wget -q -O - https://downloads.openwrt.org/releases/22.03-SNAPSHOT/targets/mediatek/mt7622/version.buildinfo)"
 	OPENWRT_INITRD="openwrt-22.03-snapshot-${owrt_version}-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
-	OPENWRT_REMOVE_PACKAGES="luci-ssl wpad-basic-wolfssl libustream-wolfssl* px5g-wolfssl libwolfssl*"
-	OPENWRT_ADD_PACKAGES=""
-	OPENWRT_ADD_REC_PACKAGES="wpad-openssl libustream-openssl luci luci-ssl-openssl luci-theme-openwrt-2020 kmod-mtd-rw"
-	OPENWRT_ENABLE_SERVICE="uhttpd wpad"
+	OPENWRT_SYSUPGRADE="openwrt-22.03-snapshot-${owrt_version}-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb"
+	OPENWRT_ADD_REC_PACKAGES="kmod-mtd-rw"
 
-	OPENWRT_UPG_PACKAGES="auc blockd kmod-usb-storage kmod-usb-storage-uas kmod-fs-vfat \
-				kmod-nls-base kmod-nls-cp437 kmod-nls-iso8859-1 kmod-nls-utf8 \
-				kmod-fs-ext4 kmod-fs-f2fs kmod-fs-exfat \
-				luci luci-ssl-openssl luci-theme-openwrt-2020 luci-app-attendedsysupgrade -luci-ssl \
-				-libustream-wolfssl -wpad-basic-wolfssl -px5g-wolfssl libustream-openssl wpad-openssl \
-				$OPENWRT_ADD_PACKAGES"
-
-	run_openwrt_ib
-	BINDIR="${OPENWRT_DIR}/bin/targets/mediatek/mt7622"
-	[ -d "$BINDIR" ] || exit 1
-
-	mv "${BINDIR}/openwrt-22.03-snapshot-${owrt_version}-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb" "${DESTDIR}"
+	prepare_openwrt_ib
 
 	bundle_initrd recovery "${INSTALLERDIR}/dl/${OPENWRT_INITRD}"
 
 	mv "${WORKDIR}/${FILEBASE}.itb" "${DESTDIR}"
 	rm -r "${WORKDIR}"
-
+	mv "${INSTALLERDIR}/dl/${OPENWRT_SYSUPGRADE}" "${DESTDIR}"
 
 	bundle_initrd installer "${INSTALLERDIR}/dl/${OPENWRT_INITRD}" \
-		"${BINDIR}/openwrt-22.03-snapshot-${owrt_version}-mediatek-mt7622-linksys_e8450-ubi-preloader.bin" \
-		"${BINDIR}/openwrt-22.03-snapshot-${owrt_version}-mediatek-mt7622-linksys_e8450-ubi-bl31-uboot.fip" \
+		"${OPENWRT_DIR}/staging_dir/target-aarch64_cortex-a53_musl/image/mt7622-snand-1ddr-bl2.img" \
+		"${OPENWRT_DIR}/staging_dir/target-aarch64_cortex-a53_musl/image/mt7622_linksys_e8450-u-boot.fip" \
 		"${DESTDIR}/${FILEBASE}.itb"
 
 	mv "${WORKDIR}/${FILEBASE}-installer.itb" "${DESTDIR}"
