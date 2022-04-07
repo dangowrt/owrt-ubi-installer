@@ -11,12 +11,12 @@ echo
 INSTALLER_DIR="/installer"
 PRELOADER="$INSTALLER_DIR/mt7622-snand-1ddr-bl2.img"
 FIP="$INSTALLER_DIR/mt7622_linksys_e8450-u-boot.fip"
-RECOVERY="$INSTALLER_DIR/openwrt-*mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
+RECOVERY="$(ls -1 $INSTALLER_DIR/openwrt-*mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb)"
 HAS_ENV=1
 
 if [ ! -s "$PRELOADER" ] || [ ! -s "$FIP" ] || [ ! -s "$RECOVERY" ]; then
 	echo "Missing files. Aborting."
-	exit 1
+	reboot
 fi
 
 install_fix_factory() {
