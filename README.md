@@ -133,6 +133,9 @@ This keep user configuration but still allow restoring or upgrading from [ssh](h
 **Do not attempt to flash anything** (that includes the stock firmware, `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb` etc.) from the running **initramfs system** -- it will fail to reboot, possibly requiring serial console access. Instead, **powercycle** the device to reboot into the original non-ubi firmware, and then flash the `installer` version.
 
 ## Restoring the vendor/official firmware ##
+# :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: 
+#### Bad blocks are **not** handled in the way the stock firmware and loader expects it. Ie. if you are lucky enough to own a device which got a bad block in the first ~22MiB of the SPI-NAND flash, then you will need to flash using TFTP which can only be triggered using the boot menu accessible via the serial console.
+### Be prepared to open the device and wire up the serial console!
 
 1. Boot into recovery mode, either by flashing `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb` (note that this file doesn't have the word _installer_ in its filename) *or* by holding the RESET button while connecting the device to power *or* by issuing `echo c > /proc/sysrq-trigger` while running the production firmware. 
 2. Use **scp** or [WinSCP](https://winscp.net/eng/downloads.php) to copy the *mtdx* files to the `/tmp` folder on the router (the [**complete backup**](#device-flash-complete-backup-procedure) that you have on your computer), which is the **original/vendor bootchain and firmware** (the size of the *mtd3* file has to be **125MB** and make sure the size of the other files is the same, when you copy them to the router). In case you only got the [**minimal backup**](#upgrading-to-the-latest-openwrt-snapshot) (*mtd3* file size is **2MB**), also upload the [**original/vendor firmware**](#downgrade-firmware).
@@ -155,5 +158,3 @@ mtd -p 0x200000 write /tmp/FW_RT3200_1.0.01.101415_prod.img /dev/mtd3
 ```
 4. Reboot the device and wait about a minute for it to be ready.
 5. If you use the [**complete backup**](#device-flash-complete-backup-procedure), after rebooting, the router will boot into the **initramfs system**, you will need **perform a powercycle** to reboot into the original/vendor firmware (**to perform a powercycle**, unplug the device from the power source for about 30 seconds before plugging it back).
-
-**Note:** Be prepared to connect the serial console as bad blocks are **not** handled in the way the stock firmware and loader expects it. Ie. if you are lucky enough to own a device which got a bad block in the first ~22MiB of the SPI-NAND flash, then you will need to flash using TFTP which can only be triggered using the boot menu accessible via the serial console.
