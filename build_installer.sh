@@ -256,12 +256,10 @@ linksys_e8450_installer() {
 	wget -c -O "${INSTALLERDIR}/dl/vendor.bin" "${VENDOR_FW}"
 	vendorhash="$(sha256sum "${INSTALLERDIR}/dl/vendor.bin" | cut -d' ' -f1)"
 	if [ "$vendorhash" = "$VENDOR_FW_HASH" ]; then
-		binwalk -C "${WORKDIR}" -e "${INSTALLERDIR}/dl/vendor.bin"
-		gpg --no-default-keyring --keyring "${INSTALLERDIR}/vendor-keyring" --import < "${WORKDIR}/_vendor.bin.extracted/squashfs-root/root/.gnupg/pubring.gpg"
-		gpg --no-default-keyring --keyring "${INSTALLERDIR}/vendor-keyring" --import < "${WORKDIR}/_vendor.bin.extracted/squashfs-root/root/.gnupg/secring.gpg"
-		echo y | gpg --no-default-keyring --keyring "${INSTALLERDIR}/vendor-keyring" --lsign 16EBADDEF5B6755C
-		gpg --no-default-keyring --keyring "${INSTALLERDIR}/vendor-keyring" --default-key 762AE637CDF0596EBA79444D99DAC426DCF76BA1 -r aruba_recipient@linksys.com -s -e --batch --output "${WORKDIR}/${FILEBASE}-installer_signed.itb" "${WORKDIR}/${FILEBASE}-installer.itb"
-		gpg --no-default-keyring --keyring "${INSTALLERDIR}/vendor-keyring" --default-key 762AE637CDF0596EBA79444D99DAC426DCF76BA1 -r aruba_recipient@linksys.com -s -e --batch --output "${DESTDIR}/${FILEBASE}_signed.itb" "${DESTDIR}/${FILEBASE}.itb"
+		unsquashfs -o 2621440 -d "${WORKDIR}/rootfs" "${INSTALLERDIR}/dl/vendor.bin" "/root/.gnupg/secring.gpg"
+		gpg --no-default-keyring --keyring "${INSTALLERDIR}/vendor-keyring" --import < "${WORKDIR}/rootfs/root/.gnupg/secring.gpg"
+		gpg --no-default-keyring --keyring "${INSTALLERDIR}/vendor-keyring" --default-key 762AE637CDF0596EBA79444D99DAC426DCF76BA1 --trusted-key 16EBADDEF5B6755C -r aruba_recipient@linksys.com -s -e --batch --output "${WORKDIR}/${FILEBASE}-installer_signed.itb" "${WORKDIR}/${FILEBASE}-installer.itb"
+		gpg --no-default-keyring --keyring "${INSTALLERDIR}/vendor-keyring" --default-key 762AE637CDF0596EBA79444D99DAC426DCF76BA1 --trusted-key 16EBADDEF5B6755C -r aruba_recipient@linksys.com -s -e --batch --output "${DESTDIR}/${FILEBASE}_signed.itb" "${DESTDIR}/${FILEBASE}.itb"
 	else
 		rm "${INSTALLERDIR}/dl/vendor.bin"
 	fi

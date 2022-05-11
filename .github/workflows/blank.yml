@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Install libfdt-dev and cmake
-        run: sudo apt install libfdt-dev cmake binwalk squashfs-tools
+        run: sudo apt install libfdt-dev cmake squashfs-tools
 
       - name: Run builder script
         run: mkdir -m 0700 $HOME/.gnupg ; bash build_installer.sh
