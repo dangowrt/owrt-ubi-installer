@@ -236,6 +236,8 @@ linksys_e8450_installer() {
 	OPENWRT_INITRD="openwrt-22.03-snapshot-${owrt_version}-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
 	OPENWRT_SYSUPGRADE="openwrt-22.03-snapshot-${owrt_version}-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb"
 	OPENWRT_ADD_REC_PACKAGES="kmod-mtd-rw"
+	VENDOR_FW="https://web.archive.org/web/20220511153700if_/https://www.belkin.com/support/assets/belkin/firmware/FW_RT3200_1.1.01.272918_PROD_unsigned.img"
+	VENDOR_FW_HASH="01a9efa97120ff6692c252f2958269afbc87acd2528b281adfc8b55b0ca6cf8a"
 
 	prepare_openwrt_ib
 
@@ -243,14 +245,28 @@ linksys_e8450_installer() {
 
 	mv "${WORKDIR}/${FILEBASE}.itb" "${DESTDIR}"
 	rm -r "${WORKDIR}"
-	mv "${INSTALLERDIR}/dl/${OPENWRT_SYSUPGRADE}" "${DESTDIR}"
+	cp "${INSTALLERDIR}/dl/${OPENWRT_SYSUPGRADE}" "${DESTDIR}"
 
 	bundle_initrd installer "${INSTALLERDIR}/dl/${OPENWRT_INITRD}" \
 		"${OPENWRT_DIR}/staging_dir/target-aarch64_cortex-a53_musl/image/mt7622-snand-1ddr-bl2.img" \
 		"${OPENWRT_DIR}/staging_dir/target-aarch64_cortex-a53_musl/image/mt7622_linksys_e8450-u-boot.fip" \
 		"${DESTDIR}/${FILEBASE}.itb"
 
-	mv "${WORKDIR}/${FILEBASE}-installer.itb" "${DESTDIR}"
+	# thanks to @linksys for leaving private key in the firmware
+	wget -c -O "${INSTALLERDIR}/dl/vendor.bin" "${VENDOR_FW}"
+	vendorhash="$(sha256sum "${INSTALLERDIR}/dl/vendor.bin" | cut -d' ' -f1)"
+	if [ "$vendorhash" = "$VENDOR_FW_HASH" ]; then
+		binwalk -C "${WORKDIR}" -e "${INSTALLERDIR}/dl/vendor.bin"
+		gpg --no-default-keyring --keyring "${INSTALLERDIR}/vendor-keyring" --import < "${WORKDIR}/_vendor.bin.extracted/squashfs-root/root/.gnupg/pubring.gpg"
+		gpg --no-default-keyring --keyring "${INSTALLERDIR}/vendor-keyring" --import < "${WORKDIR}/_vendor.bin.extracted/squashfs-root/root/.gnupg/secring.gpg"
+		echo y | gpg --no-default-keyring --keyring "${INSTALLERDIR}/vendor-keyring" --lsign 16EBADDEF5B6755C
+		gpg --no-default-keyring --keyring "${INSTALLERDIR}/vendor-keyring" --default-key 762AE637CDF0596EBA79444D99DAC426DCF76BA1 -r aruba_recipient@linksys.com -s -e --batch --output "${WORKDIR}/${FILEBASE}-installer_signed.itb" "${WORKDIR}/${FILEBASE}-installer.itb"
+		gpg --no-default-keyring --keyring "${INSTALLERDIR}/vendor-keyring" --default-key 762AE637CDF0596EBA79444D99DAC426DCF76BA1 -r aruba_recipient@linksys.com -s -e --batch --output "${DESTDIR}/${FILEBASE}_signed.itb" "${DESTDIR}/${FILEBASE}.itb"
+	else
+		rm "${INSTALLERDIR}/dl/vendor.bin"
+	fi
+
+	mv "${WORKDIR}/${FILEBASE}-installer"* "${DESTDIR}"
 	rm -r "${WORKDIR}"
 }
 
