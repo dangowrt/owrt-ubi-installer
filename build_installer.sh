@@ -230,11 +230,11 @@ bundle_initrd() {
 }
 
 linksys_e8450_installer() {
-	OPENWRT_TARGET="https://downloads.openwrt.org/releases/22.03-SNAPSHOT/targets/mediatek/mt7622"
-	OPENWRT_IB="openwrt-imagebuilder-22.03-SNAPSHOT-mediatek-mt7622.Linux-x86_64.tar.xz"
-	owrt_version="$(wget -q -O - https://downloads.openwrt.org/releases/22.03-SNAPSHOT/targets/mediatek/mt7622/version.buildinfo)"
-	OPENWRT_INITRD="openwrt-22.03-snapshot-${owrt_version}-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
-	OPENWRT_SYSUPGRADE="openwrt-22.03-snapshot-${owrt_version}-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb"
+	OPENWRT_RELEASE="22.03.0-rc3"
+	OPENWRT_TARGET="https://downloads.openwrt.org/releases/${OPENWRT_RELEASE}/targets/mediatek/mt7622"
+	OPENWRT_IB="openwrt-imagebuilder-${OPENWRT_RELEASE}-mediatek-mt7622.Linux-x86_64.tar.xz"
+	OPENWRT_INITRD="openwrt-${OPENWRT_RELEASE}-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
+	OPENWRT_SYSUPGRADE="openwrt-${OPENWRT_RELEASE}-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb"
 	OPENWRT_ADD_REC_PACKAGES="kmod-mtd-rw"
 	VENDOR_FW="https://web.archive.org/web/20220511153700if_/https://www.belkin.com/support/assets/belkin/firmware/FW_RT3200_1.1.01.272918_PROD_unsigned.img"
 	VENDOR_FW_HASH="01a9efa97120ff6692c252f2958269afbc87acd2528b281adfc8b55b0ca6cf8a"
