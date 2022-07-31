@@ -1,4 +1,7 @@
 #!/bin/bash -x
+set -o errexit
+set -o nounset
+set -o pipefail
 
 DESTDIR="$PWD"
 
@@ -121,7 +124,11 @@ unfit_image() {
 }
 
 refit_image() {
-	imgtype=$2
+	# Note that this has an unintended but necessary side-effect of resetting
+	# imgtype globally - this is needed for correct functioning of the later mv
+	# command. Undoubtedly a lucky bug. I.e. this would break other parts of the script:
+  # [[ ! -z ${2-} ]] && imgtype=$2
+  imgtype=${2-}
 	# re-add data nodes from files
 	its_add_data > "${ITSFILE}.new"
 
@@ -176,7 +183,7 @@ bundle_initrd() {
 
 	extract_initrd
 
-	[ "${OPENWRT_REMOVE_PACKAGES}" ] && IPKG_NO_SCRIPT=1 IPKG_INSTROOT="${WORKDIR}/initrd" \
+	[[ ! -z "${OPENWRT_REMOVE_PACKAGES-}" ]] && IPKG_NO_SCRIPT=1 IPKG_INSTROOT="${WORKDIR}/initrd" \
 		"${OPKG}" --offline-root="${WORKDIR}/initrd" -f "${WORKDIR}/initrd/etc/opkg.conf" \
 		remove ${OPENWRT_REMOVE_PACKAGES}
 
@@ -187,7 +194,7 @@ bundle_initrd() {
 			--verify-program="${WORKDIR}/initrd/usr/sbin/opkg-key" \
 			update
 
-	[ "${OPENWRT_ADD_PACKAGES}" ] && \
+	[[ ! -z "${OPENWRT_ADD_PACKAGES-}" ]] && \
 		PATH="$(dirname "${OPKG}"):$PATH" \
 		OPKG_KEYS="${WORKDIR}/initrd/etc/opkg/keys" \
 		TMPDIR="${WORKDIR}/initrd/tmp" \
