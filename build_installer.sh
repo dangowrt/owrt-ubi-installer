@@ -27,16 +27,25 @@ FILEBASE=
 WORKDIR=
 ITSFILE=
 
+
 prepare_openwrt_ib() {
+	export GNUPGHOME=$(mktemp -d)
+	trap 'rm -rf -- "${GNUPGHOME}"' EXIT
+
 	mkdir -p "${INSTALLERDIR}/dl"
 	cd "${INSTALLERDIR}/dl"
-	gpg --no-default-keyring--keyring "${INSTALLERDIR}/openwrt-keyring" --list-key $OPENWRT_PGP 1>/dev/null 2>/dev/null || gpg --no-default-keyring --keyring "${INSTALLERDIR}/openwrt-keyring" --keyserver ${KEYSERVER}  --recv-key $OPENWRT_PGP
+	gpg --no-default-keyring--keyring "${INSTALLERDIR}/openwrt-keyring" --list-key $OPENWRT_PGP 1>/dev/null 2>/dev/null || gpg --no-default-keyring --keyring "${INSTALLERDIR}/openwrt-keyring" --keyserver ${KEYSERVER}	--recv-key $OPENWRT_PGP
 	gpg --no-default-keyring --keyring "${INSTALLERDIR}/openwrt-keyring" --list-key $OPENWRT_PGP 1>/dev/null 2>/dev/null || exit 0
 	rm -f "sha256sums.asc" "sha256sums"
 	wget "${OPENWRT_TARGET}/sha256sums.asc"
 	wget "${OPENWRT_TARGET}/sha256sums"
 	gpg --no-default-keyring --keyring "${INSTALLERDIR}/openwrt-keyring" --verify sha256sums.asc sha256sums || exit 1
-	sha256sum -c sha256sums --ignore-missing || rm -f  "$OPENWRT_SYSUPGRADE" "$OPENWRT_IB" "$OPENWRT_INITRD"
+
+	trap - EXIT
+	rm -rf -- "${GNUPGHOME}"
+	export -n GNUPGHOME
+
+	sha256sum -c sha256sums --ignore-missing || rm -f "$OPENWRT_SYSUPGRADE" "$OPENWRT_IB" "$OPENWRT_INITRD"
 	wget -c "${OPENWRT_TARGET}/${OPENWRT_INITRD}"
 	wget -c "${OPENWRT_TARGET}/${OPENWRT_SYSUPGRADE}"
 	wget -c "${OPENWRT_TARGET}/${OPENWRT_IB}"
