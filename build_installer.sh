@@ -32,7 +32,7 @@ prepare_openwrt_ib() {
 	cd "${INSTALLERDIR}/dl"
 	gpg --no-default-keyring--keyring "${INSTALLERDIR}/openwrt-keyring" --list-key $OPENWRT_PGP 1>/dev/null 2>/dev/null || gpg --no-default-keyring --keyring "${INSTALLERDIR}/openwrt-keyring" --keyserver ${KEYSERVER}  --recv-key $OPENWRT_PGP
 	gpg --no-default-keyring --keyring "${INSTALLERDIR}/openwrt-keyring" --list-key $OPENWRT_PGP 1>/dev/null 2>/dev/null || exit 0
-	rm "sha256sums.asc" "sha256sums"
+	rm -f "sha256sums.asc" "sha256sums"
 	wget "${OPENWRT_TARGET}/sha256sums.asc"
 	wget "${OPENWRT_TARGET}/sha256sums"
 	gpg --no-default-keyring --keyring "${INSTALLERDIR}/openwrt-keyring" --verify sha256sums.asc sha256sums || exit 1
