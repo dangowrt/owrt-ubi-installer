@@ -34,12 +34,12 @@ You'll need the below to use the script to generate the installer image:
 
 ### Downgrade firmware
 
-#### Upstream firmware version 1.1.x rejects the installer image. The recommended work-around is to downgrade to version 1.0 before running the installer.
+#### Stock firmware version 1.1.x rejects the installer image. The recommended work-around is to downgrade to version 1.0 before running the installer.
 
  * For Linksys E8450 [FW_E8450_1.0.01.101415_prod.img](https://downloads.linksys.com/support/assets/firmware/FW_E8450_1.0.01.101415_prod.img)
  * For Belkin RT3200 [FW_RT3200_1.0.01.101415_prod.img](https://www.belkin.com/support/assets/belkin/firmware/FW_RT3200_1.0.01.101415_prod.img)
 
-#### Upstream firmware version 1.1.01.272918 or higher, including 1.2.x require using the `_signed.itb` image instead.
+#### Stock firmware version 1.1.01.272918 or higher, including 1.2.x require using the `_signed.itb` image instead.
 
 #### Assuming the device is running stock firmware version 1.0, and is brand new or just after factory reset.
 
@@ -52,7 +52,7 @@ You'll need the below to use the script to generate the installer image:
 5. Click *exactly* inside the radio button to confirm the terms and conditions, then abort the wizard.
 6. You should then be greeted by the login screen, the stock password is "admin".
 7. Navigate to __Administration__ -> __Firmware Upgrade__.
-8. Upload `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb`.
+8. Upload `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb`. Use `_signed.itb` instead when running stock firmware >= 1.1.
 9. Wait for a minute, the OpenWrt recovery image should come up.
 9. Navigate to __System__ -> __Backup / Flash Firmware__.
 10. Upload `openwrt-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb`.
@@ -65,7 +65,7 @@ You'll need the below to use the script to generate the installer image:
 SNAPSHOTS ARE LARGELY UNTESTED!
 PROCEED AT YOUR OWN RISK!
 
-1. Backup the original/vendor bootchain (**does not include original/vendor firmware**).
+0. Before upgrading you should backup the original/vendor bootchain (**does not include original/vendor firmware**).
 
    Connect to the device via SSH and enter the following commands:
 
@@ -76,7 +76,9 @@ PROCEED AT YOUR OWN RISK!
 
    Then, copy the files under `/tmp/boot_backup` using *scp* to your computer. These files are needed in case you want to restore the original/vendor firmware. They can also be used in emergency case for reflashing via [JTAG](https://openwrt.org/toh/linksys/e8450#jtag).
 
-2. Both `auc` (attended sysupgrade command-line client) and `luci-app-attendedsysupgrade` (LuCI web-interface counterpart) are included since version 0.6. Simply run `auc` from the command-line, or navigate to __System__ -> __Attended Sysupgrade__ and proceed accordingly.
+1. Install a client for the sysupgrade service: either `luci-app-attendedsysupgrade` (Web UI) or `auc` (command line).
+
+2. Run `auc` from the command-line, or navigate to __System__ -> __Attended Sysupgrade__ and proceed accordingly.
 
 ## Enter recovery mode under OpenWrt
 
@@ -110,7 +112,7 @@ This keep user configuration but still allow restoring or upgrading from [ssh](h
 
 #### Assuming the device is running stock firmware version 1.0
 
-1. Flash `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb` (note that this file doesn't have the word _installer_ in its filename)
+1. Flash `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb` (note that this file doesn't have the word _installer_ in its filename), use `_signed.itb` variant if running stock firmware >= 1.1.
 2. Backup
    
    - Via LuCi web-interface
