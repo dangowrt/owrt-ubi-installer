@@ -39,6 +39,8 @@ You'll need the below to use the script to generate the installer image:
  * For Linksys E8450 [FW_E8450_1.0.01.101415_prod.img](https://downloads.linksys.com/support/assets/firmware/FW_E8450_1.0.01.101415_prod.img)
  * For Belkin RT3200 [FW_RT3200_1.0.01.101415_prod.img](https://www.belkin.com/support/assets/belkin/firmware/FW_RT3200_1.0.01.101415_prod.img)
 
+#### Stock firmware version 1.2.x does not require downgrading.
+
 #### Stock firmware version 1.1.01.272918 or higher, including 1.2.x require using the `_signed.itb` image instead.
 
 #### Assuming the device is running stock firmware version 1.0, and is brand new or just after factory reset.
@@ -49,7 +51,7 @@ You'll need the below to use the script to generate the installer image:
 2. Set the IP address of your computer as `192.168.1.254` with netmask `255.255.255.0`, no gateway, no DNS.
 3. Power on the device, wait about a minute for it to be ready.
 4. Open a web browser, navigate to http://192.168.1.1 and wait for the wizard to come up.
-5. Click *exactly* inside the radio button to confirm the terms and conditions, then abort the wizard.
+5. Click *exactly* inside the radio button to confirm the terms and conditions, then abort the wizard. (Complete the wizard if you are running stock firmware version 1.2.x)
 6. You should then be greeted by the login screen, the stock password is "admin".
 7. Navigate to __Administration__ -> __Firmware Upgrade__.
 8. Upload `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb`. Use `_signed.itb` instead when running stock firmware >= 1.1.
