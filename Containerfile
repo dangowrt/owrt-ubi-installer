@@ -1,17 +1,15 @@
-FROM fedora:36
-RUN dnf -y install \
-    @c-development \
-    @development-tools \
-    @development-libs \
-    zlib-static \
-    which \
+FROM debian:bullseye
+RUN apt-get update && apt-get dist-upgrade -y && apt-get -y install \
+    build-essential \
     diffutils \
+    git \
     python3 \
     wget \
-    xz \
     cmake \
-    libfdt-devel \
+    libfdt-dev \
     squashfs-tools \
-    && dnf clean all
+    && apt-get autoclean && apt-get autoremove
+
+RUN git clone https://github.com/dangowrt/owrt-ubi-installer.git /build
 WORKDIR /build
-ENTRYPOINT ["./build_installer.sh"]
+RUN ./build_installer.sh
