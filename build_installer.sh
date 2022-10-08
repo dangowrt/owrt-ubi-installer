@@ -29,12 +29,13 @@ ITSFILE=
 
 
 prepare_openwrt_ib() {
-	export GNUPGHOME=$(mktemp -d)
+	GNUPGHOME="$(mktemp -d)"
+	export GNUPGHOME
 	trap 'rm -rf -- "${GNUPGHOME}"' EXIT
 
 	mkdir -p "${INSTALLERDIR}/dl"
 	cd "${INSTALLERDIR}/dl"
-	gpg --no-default-keyring--keyring "${INSTALLERDIR}/openwrt-keyring" --list-key $OPENWRT_PGP 1>/dev/null 2>/dev/null || gpg --no-default-keyring --keyring "${INSTALLERDIR}/openwrt-keyring" --keyserver ${KEYSERVER}	--recv-key $OPENWRT_PGP
+	gpg --no-default-keyring --keyring "${INSTALLERDIR}/openwrt-keyring" --list-key $OPENWRT_PGP 1>/dev/null 2>/dev/null || gpg --no-default-keyring --keyring "${INSTALLERDIR}/openwrt-keyring" --keyserver ${KEYSERVER}	--recv-key $OPENWRT_PGP
 	gpg --no-default-keyring --keyring "${INSTALLERDIR}/openwrt-keyring" --list-key $OPENWRT_PGP 1>/dev/null 2>/dev/null || exit 0
 	rm -f "sha256sums.asc" "sha256sums"
 	wget "${OPENWRT_TARGET}/sha256sums.asc"
@@ -52,7 +53,7 @@ prepare_openwrt_ib() {
 	sha256sum -c sha256sums --ignore-missing || exit 1
 	mkdir -p "${OPENWRT_DIR}" || exit 1
 	tar -xJf "${INSTALLERDIR}/dl/${OPENWRT_IB}" -C "${OPENWRT_DIR}" --strip-components=1
-	DTC="$(ls -1 ${OPENWRT_DIR}/build_dir/target-aarch64_cortex-a53_musl/linux-mediatek_mt7622/linux-*/scripts/dtc/dtc)"
+	DTC="$(ls -1 "${OPENWRT_DIR}/build_dir/target-aarch64_cortex-a53_musl/linux-mediatek_mt7622/linux-"*"/scripts/dtc/dtc")"
 	[ -x "$DTC" ] || {
 		echo "can't find dtc executable in OpenWrt IB"
 		exit 1
@@ -65,7 +66,7 @@ its_add_data() {
 	local in_image=0
 	local br_level=0
 	local img_name
-	cat "${ITSFILE}" | while read line; do
+	while read -r line; do
 		echo "$line"
 		if [ "$in_images" = "0" ]; then
 			case "$line" in
@@ -103,7 +104,7 @@ its_add_data() {
 					;;
 			esac
 		fi
-	done
+	done < "${ITSFILE}"
 }
 
 unfit_image() {
@@ -117,13 +118,9 @@ unfit_image() {
 
 	"$DTC" -I dtb -O dts -o "$ITSFILE" "$INFILE" || exit 2
 
-	echo "extracted successfully"
-
 	# figure out exact FIT image type
-	CLASSIC=
 	EXTERNAL=
 	STATIC=
-	grep -q "data = " "$ITSFILE" && CLASSIC=1
 	grep -q "data-size = " "$ITSFILE" && EXTERNAL=1
 	grep -q "data-position = " "$ITSFILE" && STATIC=1
 
@@ -133,21 +130,21 @@ unfit_image() {
 }
 
 refit_image() {
-	# Note that this has an unintended but necessary side-effect of resetting
-	# imgtype globally - this is needed for correct functioning of the later mv
-	# command. Undoubtedly a lucky bug. I.e. this would break other parts of the script:
-  # [[ ! -z ${2-} ]] && imgtype=$2
-  imgtype=${2-}
+	local blocksize="${1}"
+	local imgtype
+	[ -n "${2-}" ] && imgtype="${2}"
+	local MKIMAGE_PARM=()
+
 	# re-add data nodes from files
 	its_add_data > "${ITSFILE}.new"
 
-	MKIMAGE_PARM=""
-	[ "$EXTERNAL" = "1" ] && MKIMAGE_PARM="$MKIMAGE_PARM -E -B 0x1000"
-	[ "$STATIC" = "1" ] && MKIMAGE_PARM="$MKIMAGE_PARM -p 0x1000"
+	[ "$EXTERNAL" = "1" ] && MKIMAGE_PARM=("${MKIMAGE_PARM[@]}" -E -B 0x1000)
+	[ "$STATIC" = "1" ] && MKIMAGE_PARM=("${MKIMAGE_PARM[@]}" -p 0x1000)
 
-	PATH="$PATH:$(dirname "$DTC")" "$MKIMAGE" $MKIMAGE_PARM -f "${ITSFILE}.new" "${FILEBASE}-refit.itb"
+	PATH="$PATH:$(dirname "$DTC")" "$MKIMAGE" "${MKIMAGE_PARM[@]}" -f "${ITSFILE}.new" "${FILEBASE}-refit.itb"
 
-	dd if="${FILEBASE}-refit.itb" of="${FILEBASE}${imgtype:+-$imgtype}.itb" bs=$1 conv=sync
+	echo "imgtype: \"${imgtype:-(unset)}\""
+	dd if="${FILEBASE}-refit.itb" of="${FILEBASE}${imgtype:+-$imgtype}.itb" bs="$blocksize" conv=sync
 }
 
 extract_initrd() {
@@ -177,9 +174,9 @@ allow_mtd_write() {
 }
 
 enable_services() {
-	cd ${WORKDIR}/initrd
+	cd "${WORKDIR}/initrd"
 	for service in ./etc/init.d/*; do
-		( cd ${WORKDIR}/initrd ; IPKG_INSTROOT="${WORKDIR}/initrd" $(command -v bash) ./etc/rc.common $service enable 2>/dev/null )
+		( cd "${WORKDIR}/initrd" ; IPKG_INSTROOT="${WORKDIR}/initrd" $(command -v bash) ./etc/rc.common "$service" enable 2>/dev/null )
 	done
 }
 
@@ -192,9 +189,9 @@ bundle_initrd() {
 
 	extract_initrd
 
-	[[ ! -z "${OPENWRT_REMOVE_PACKAGES-}" ]] && IPKG_NO_SCRIPT=1 IPKG_INSTROOT="${WORKDIR}/initrd" \
+	[[ ${#OPENWRT_REMOVE_PACKAGES[@]} -gt 0 ]] && IPKG_NO_SCRIPT=1 IPKG_INSTROOT="${WORKDIR}/initrd" \
 		"${OPKG}" --offline-root="${WORKDIR}/initrd" -f "${WORKDIR}/initrd/etc/opkg.conf" \
-		remove ${OPENWRT_REMOVE_PACKAGES}
+		remove "${OPENWRT_REMOVE_PACKAGES[@]}"
 
 	PATH="$(dirname "${OPKG}"):$PATH" \
 	OPKG_KEYS="${WORKDIR}/initrd/etc/opkg/keys" \
@@ -203,24 +200,25 @@ bundle_initrd() {
 			--verify-program="${WORKDIR}/initrd/usr/sbin/opkg-key" \
 			update
 
-	[[ ! -z "${OPENWRT_ADD_PACKAGES-}" ]] && \
+	[[ ${#OPENWRT_ADD_PACKAGES[@]} -gt 0 ]] && \
 		PATH="$(dirname "${OPKG}"):$PATH" \
 		OPKG_KEYS="${WORKDIR}/initrd/etc/opkg/keys" \
 		TMPDIR="${WORKDIR}/initrd/tmp" \
 		IPKG_NO_SCRIPT=1 IPKG_INSTROOT="${WORKDIR}/initrd" \
 		"${OPKG}" --offline-root="${WORKDIR}/initrd" -f "${WORKDIR}/initrd/etc/opkg.conf" \
 		--verify-program="${WORKDIR}/initrd/usr/sbin/opkg-key" \
-		--force-postinst install ${OPENWRT_ADD_PACKAGES}
+		--force-postinst install "${OPENWRT_ADD_PACKAGES[@]}"
 
 	case "$imgtype" in
 		recovery)
+			[[ ${#OPENWRT_ADD_REC_PACKAGES[@]} -gt 0 ]] && \
 			PATH="$(dirname "${OPKG}"):$PATH" \
 			OPKG_KEYS="${WORKDIR}/initrd/etc/opkg/keys" \
 			TMPDIR="${WORKDIR}/initrd/tmp" \
 			IPKG_NO_SCRIPT=1 IPKG_INSTROOT="${WORKDIR}/initrd" \
 				"${OPKG}" --offline-root="${WORKDIR}/initrd" -f "${WORKDIR}/initrd/etc/opkg.conf" \
 				--verify-program="${WORKDIR}/initrd/usr/sbin/opkg-key" \
-				--force-postinst install ${OPENWRT_ADD_REC_PACKAGES}
+				--force-postinst install "${OPENWRT_ADD_REC_PACKAGES[@]}"
 			;;
 		installer)
 			cp -avr "${INSTALLERDIR}/files/"* "${WORKDIR}/initrd"
@@ -240,7 +238,7 @@ bundle_initrd() {
 			;;
 		installer)
 			allow_mtd_write
-			refit_image 128k $imgtype
+			refit_image 128k "$imgtype"
 			;;
 	esac
 }
@@ -251,7 +249,9 @@ linksys_e8450_installer() {
 	OPENWRT_IB="openwrt-imagebuilder-${OPENWRT_RELEASE}-mediatek-mt7622.Linux-x86_64.tar.xz"
 	OPENWRT_INITRD="openwrt-${OPENWRT_RELEASE}-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
 	OPENWRT_SYSUPGRADE="openwrt-${OPENWRT_RELEASE}-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb"
-	OPENWRT_ADD_REC_PACKAGES="kmod-mtd-rw"
+	OPENWRT_ADD_REC_PACKAGES=(kmod-mtd-rw)
+	OPENWRT_REMOVE_PACKAGES=()
+	OPENWRT_ADD_PACKAGES=()
 	VENDOR_FW="https://web.archive.org/web/20220511153700if_/https://www.belkin.com/support/assets/belkin/firmware/FW_RT3200_1.1.01.272918_PROD_unsigned.img"
 	VENDOR_FW_HASH="01a9efa97120ff6692c252f2958269afbc87acd2528b281adfc8b55b0ca6cf8a"
 
@@ -273,9 +273,9 @@ linksys_e8450_installer() {
 	vendorhash="$(sha256sum "${INSTALLERDIR}/dl/vendor.bin" | cut -d' ' -f1)"
 	if [ "$vendorhash" = "$VENDOR_FW_HASH" ]; then
 		unsquashfs -o 2621440 -d "${WORKDIR}/rootfs" "${INSTALLERDIR}/dl/vendor.bin" "/root/.gnupg/secring.gpg"
-		gpg --no-default-keyring --keyring "${INSTALLERDIR}/vendor-keyring" --import < "${WORKDIR}/rootfs/root/.gnupg/secring.gpg"
-		gpg --no-default-keyring --keyring "${INSTALLERDIR}/vendor-keyring" --default-key 762AE637CDF0596EBA79444D99DAC426DCF76BA1 --trusted-key 16EBADDEF5B6755C -r aruba_recipient@linksys.com -s -e --batch --output "${WORKDIR}/${FILEBASE}-installer_signed.itb" "${WORKDIR}/${FILEBASE}-installer.itb"
-		gpg --no-default-keyring --keyring "${INSTALLERDIR}/vendor-keyring" --default-key 762AE637CDF0596EBA79444D99DAC426DCF76BA1 --trusted-key 16EBADDEF5B6755C -r aruba_recipient@linksys.com -s -e --batch --output "${DESTDIR}/${FILEBASE}_signed.itb" "${DESTDIR}/${FILEBASE}.itb"
+		gpg --no-default-keyring --keyring "${INSTALLERDIR}/vendor-keyring" --import < "${WORKDIR}/rootfs/root/.gnupg/secring.gpg" || true
+		gpg --no-default-keyring --keyring "${INSTALLERDIR}/vendor-keyring" --default-key 762AE637CDF0596EBA79444D99DAC426DCF76BA1 --trusted-key 16EBADDEF5B6755C -r aruba_recipient@linksys.com -s -e --batch --output "${WORKDIR}/${FILEBASE}-installer_signed.itb" "${WORKDIR}/${FILEBASE}-installer.itb" || true
+		gpg --no-default-keyring --keyring "${INSTALLERDIR}/vendor-keyring" --default-key 762AE637CDF0596EBA79444D99DAC426DCF76BA1 --trusted-key 16EBADDEF5B6755C -r aruba_recipient@linksys.com -s -e --batch --output "${DESTDIR}/${FILEBASE}_signed.itb" "${DESTDIR}/${FILEBASE}.itb" || true
 	else
 		rm "${INSTALLERDIR}/dl/vendor.bin"
 	fi
