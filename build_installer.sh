@@ -141,7 +141,9 @@ refit_image() {
 	[ "$EXTERNAL" = "1" ] && MKIMAGE_PARM=("${MKIMAGE_PARM[@]}" -E -B 0x1000)
 	[ "$STATIC" = "1" ] && MKIMAGE_PARM=("${MKIMAGE_PARM[@]}" -p 0x1000)
 
-	PATH="$PATH:$(dirname "$DTC")" "$MKIMAGE" "${MKIMAGE_PARM[@]}" -f "${ITSFILE}.new" "${FILEBASE}-refit.itb"
+	PATH="$PATH:$(dirname "$DTC")" \
+		SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH \
+		"$MKIMAGE" "${MKIMAGE_PARM[@]}" -f "${ITSFILE}.new" "${FILEBASE}-refit.itb"
 
 	echo "imgtype: \"${imgtype:-(unset)}\""
 	dd if="${FILEBASE}-refit.itb" of="${FILEBASE}${imgtype:+-$imgtype}.itb" bs="$blocksize" conv=sync
@@ -226,8 +228,12 @@ bundle_initrd() {
 			;;
 	esac
 
+	sed -i "s/Installed-Time: .*/Installed-Time: ${SOURCE_DATE_EPOCH}/" ${WORKDIR}/initrd/usr/lib/opkg/status
+
 	enable_services
 	rm -rf "${WORKDIR}/initrd/tmp/"*
+
+	find ${WORKDIR}/initrd/ -mindepth 1 -execdir touch -hcd "@${SOURCE_DATE_EPOCH}" "{}" +
 
 	repack_initrd
 
