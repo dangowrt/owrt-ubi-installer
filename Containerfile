@@ -1,4 +1,4 @@
-FROM debian:bullseye
+FROM debian:bullseye-slim
 RUN apt-get update && apt-get dist-upgrade -y && apt-get -y install \
     build-essential \
     diffutils \
