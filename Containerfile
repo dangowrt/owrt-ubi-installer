@@ -1,4 +1,4 @@
-FROM debian:bullseye-slim
+FROM ubuntu:22.04
 RUN apt-get update && apt-get dist-upgrade -y && apt-get -y install \
     build-essential \
     diffutils \
