@@ -17,6 +17,7 @@ HAS_ENV=1
 if [ ! -s "$PRELOADER" ] || [ ! -s "$FIP" ] || [ ! -s "$RECOVERY" ]; then
 	echo "Missing files. Aborting."
 	reboot
+	exit 1
 fi
 
 install_fix_factory() {
