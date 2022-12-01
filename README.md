@@ -37,7 +37,7 @@ You'll need the below to use the script to generate the installer image:
 #### Stock firmware version 1.1.x rejects the installer image. The recommended work-around is to downgrade to version 1.0 before running the installer.
 
  * For Linksys E8450 [FW_E8450_1.0.01.101415_prod.img](https://downloads.linksys.com/support/assets/firmware/FW_E8450_1.0.01.101415_prod.img)
- * For Belkin RT3200 [FW_RT3200_1.0.01.101415_prod.img](https://www.belkin.com/support/assets/belkin/firmware/FW_RT3200_1.0.01.101415_prod.img)
+ * For Belkin RT3200 [FW_RT3200_1.0.01.101415_prod.img](https://s3.belkin.com/support/assets/belkin/firmware/FW_RT3200_1.0.01.101415_prod.img)
 
 #### Stock firmware version 1.2.x does not require downgrading.
 
