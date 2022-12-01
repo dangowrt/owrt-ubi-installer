@@ -8,7 +8,7 @@ https://user-images.githubusercontent.com/82453643/147394017-e7af122c-8234-4f11-
 
 **WARNING #2** Re-flashing the installer when the device is already using UBI flash layout will erase the previously backed up bootchain, which in most cases would be the vendor/official one.
 
-If you plan to ever go back to the stock firmware, it's recommended that you make a **complete backup** of the device flash __**before**__ running the installer. (see below "[Device flash complete backup procedure](#device-flash-complete-backup-procedure)")
+If you plan to ever go back to the stock firmware, you will need a backup of the vendor bootchain and firmware. When going back to the stock firmware, be prepared to connect to the internal serial port in case there are any bad blocks.
 
 ## Table of Contents
 * [Script information](#script-information)
@@ -43,9 +43,7 @@ You'll need the below to use the script to generate the installer image:
 
 #### Stock firmware version 1.1.01.272918 or higher, including 1.2.x require using the `_signed.itb` image instead.
 
-#### Assuming the device is running stock firmware version 1.0, and is brand new or just after factory reset.
-
-**To be 100% on the safe side consider doing the [complete backup procedure](#device-flash-complete-backup-procedure) before proceeding with the installation.**
+#### Assuming the device is running stock firmware, and is brand new or just after factory reset.
 
 1. Connect any of the LAN ports of the device directly to the Ethernet port of your computer.
 2. Set the IP address of your computer as `192.168.1.254` with netmask `255.255.255.0`, no gateway, no DNS.
@@ -61,26 +59,25 @@ You'll need the below to use the script to generate the installer image:
 12. The device will reboot, you may proceed to setup OpenWrt.
 13. Follow the [post install tips in the OpenWrt Wiki](https://openwrt.org/toh/linksys/e8450#post_install_tips). You may proceed to setup OpenWrt.
 
-## Upgrading to the latest OpenWrt snapshot 
+## Backup stock/vendor bootchain
 
-**WARNING**
-SNAPSHOTS ARE LARGELY UNTESTED!
-PROCEED AT YOUR OWN RISK!
+Connect to the device via SSH and enter the following commands:
 
-0. Before upgrading you should backup the original/vendor bootchain (**does not include original/vendor firmware**).
+```
+mkdir /tmp/boot_backup
+mount -t ubifs ubi0:boot_backup /tmp/boot_backup
+```
 
-   Connect to the device via SSH and enter the following commands:
+Then, copy the files under `/tmp/boot_backup` using *scp* to your computer. These files are needed in case you want to restore the original/vendor firmware. They can also be used in emergency case for reflashing via [JTAG](https://openwrt.org/toh/linksys/e8450#jtag).
 
-   ```
-   mkdir /tmp/boot_backup
-   mount -t ubifs ubi0:boot_backup /tmp/boot_backup
-   ```
+## Upgrading to the latest OpenWrt release
 
-   Then, copy the files under `/tmp/boot_backup` using *scp* to your computer. These files are needed in case you want to restore the original/vendor firmware. They can also be used in emergency case for reflashing via [JTAG](https://openwrt.org/toh/linksys/e8450#jtag).
+0. Before upgrading you should backup the original/vendor bootchain, see above.
 
 1. Install a client for the sysupgrade service: either `luci-app-attendedsysupgrade` (Web UI) or `auc` (command line).
 
 2. Run `auc` from the command-line, or navigate to __System__ -> __Attended Sysupgrade__ and proceed accordingly.
+
 
 ## Enter recovery mode under OpenWrt
 
@@ -143,7 +140,7 @@ This keep user configuration but still allow restoring or upgrading from [ssh](h
 ### Be prepared to open the device and wire up the serial console!
 
 1. Boot into recovery mode, either by flashing `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb` (note that this file doesn't have the word _installer_ in its filename) *or* by holding the RESET button while connecting the device to power *or* by issuing `echo c > /proc/sysrq-trigger` while running the production firmware. 
-2. Use **scp** or [WinSCP](https://winscp.net/eng/downloads.php) to copy the *mtdx* files to the `/tmp` folder on the router (the [**complete backup**](#device-flash-complete-backup-procedure) that you have on your computer), which is the **original/vendor bootchain and firmware** (the size of the *mtd3* file has to be **125MB** and make sure the size of the other files is the same, when you copy them to the router). In case you only got the [**minimal backup**](#upgrading-to-the-latest-openwrt-snapshot) (*mtd3* file size is **2MB**), also upload the [**original/vendor firmware**](#downgrade-firmware).
+2. Use **scp** or [WinSCP](https://winscp.net/eng/downloads.php) to copy the *mtdx* files to the `/tmp` folder on the router (the [**complete backup**](#device-flash-complete-backup-procedure) that you have on your computer), which is the **original/vendor bootchain and firmware** (the size of the *mtd3* file has to be **125MB** and make sure the size of the other files is the same, when you copy them to the router). In case you only got the [**minimal backup**](#backup-stockvendor-bootchain) (*mtd3* file size is **2MB**), also upload the [**original/vendor firmware**](#downgrade-firmware).
 3. Connect to the device via SSH and enter the following commands:
 ```
 ubidetach -d 0
@@ -153,7 +150,7 @@ mtd write /tmp/mtd1 /dev/mtd1
 mtd write /tmp/mtd2 /dev/mtd2
 mtd write /tmp/mtd3 /dev/mtd3
 ```
-In case you were using the [**minimal backup**](#upgrading-to-the-latest-openwrt-snapshot) files, now write the **original/vendor firmware**:
+In case you were using the [**minimal backup**](#backup-stockvendor-bootchain) files, now write the **original/vendor firmware**:
 ```
 # On Linksys E8450
 mtd -p 0x200000 write /tmp/FW_E8450_1.0.01.101415_prod.img /dev/mtd3
