@@ -32,18 +32,8 @@ You'll need the below to use the script to generate the installer image:
 
 ## Installing OpenWrt
 
-### Downgrade firmware
-
-#### Stock firmware version 1.1.x rejects the installer image. The recommended work-around is to downgrade to version 1.0 before running the installer.
-
- * For Linksys E8450 [FW_E8450_1.0.01.101415_prod.img](https://downloads.linksys.com/support/assets/firmware/FW_E8450_1.0.01.101415_prod.img)
- * For Belkin RT3200 [FW_RT3200_1.0.01.101415_prod.img](https://s3.belkin.com/support/assets/belkin/firmware/FW_RT3200_1.0.01.101415_prod.img)
-
-#### Stock firmware version 1.2.x does not require downgrading.
-
-#### Stock firmware version 1.1.01.272918 or higher, including 1.2.x require using the `_signed.itb` image instead.
-
-#### Assuming the device is running stock firmware, and is brand new or just after factory reset.
+* **IMPORTANT: *If* a device running stock 1.1.x firmware rejects the installer image, the recommended work-around is to downgrade the device to version 1.0.x, and then re-attempt uploading the installer image.  See "Downgrading Firmware" instructions below.**
+* **IMPORTANT: Execute these steps on a brand new device running stock firmware ...or... just after performing a factory reset on the device.**
 
 1. Connect any of the LAN ports of the device directly to the Ethernet port of your computer.
 2. Set the IP address of your computer as `192.168.1.254` with netmask `255.255.255.0`, no gateway, no DNS.
@@ -52,12 +42,22 @@ You'll need the below to use the script to generate the installer image:
 5. Click *exactly* inside the radio button to confirm the terms and conditions, then abort the wizard. (Complete the wizard if you are running stock firmware version 1.2.x)
 6. You should then be greeted by the login screen, the stock password is "admin".
 7. Navigate to __Administration__ -> __Firmware Upgrade__.
-8. Upload `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb`. Use `_signed.itb` instead when running stock firmware >= 1.1.
+8. Upload the firmware "installer" image
+  * If running stock firmware < 1.1.01.272918, upload the **unsigned** image: `openwrt-...-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb`
+  * Otherwise, when stock firmware is >= 1.1.01.272918, upload the **signed** image: `openwrt-...-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer_signed.itb`
 9. Wait for a minute, the OpenWrt recovery image should come up.
 9. Navigate to __System__ -> __Backup / Flash Firmware__.
-10. Upload `openwrt-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb`.
+10. Upload `openwrt-...-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb`.
 12. The device will reboot, you may proceed to setup OpenWrt.
 13. Follow the [post install tips in the OpenWrt Wiki](https://openwrt.org/toh/linksys/e8450#post_install_tips). You may proceed to setup OpenWrt.
+
+## Downgrading Firmware - (If installer image upload was rejected)
+* **IMPORTANT: Before downgrading, verify that the rejected upload was the correct, signed or unsigned, installer image to use for the currently running firmware version. (i.e. Maybe try uploading the 'other' installer image file first.)  Most rejected uploads are probably related to signed vs. unsigned image compatibility.**
+* **Note: It may not be possible to downgrade devices with "signed" stock firmware, i.e. versions >= 1.1.01.272918, including 1.2.x versions.**
+1. Download Stock Vendor Firmware
+ * For Linksys E8450 [FW_E8450_1.0.01.101415_prod.img] (https://downloads.linksys.com/support/assets/firmware/FW_E8450_1.0.01.101415_prod.img)
+ * For Belkin RT3200 [FW_RT3200_1.0.01.101415_prod.img] (https://s3.belkin.com/support/assets/belkin/firmware/FW_RT3200_1.0.01.101415_prod.img)
+2. Upload / install the Vendor 1.0.x Firmware (using the normal procedure)
 
 ## Backup stock/vendor bootchain
 
@@ -109,9 +109,13 @@ This keep user configuration but still allow restoring or upgrading from [ssh](h
 
 ## Device flash complete backup procedure
 
-#### Assuming the device is running stock firmware version 1.0
+#### Steps
+* **IMPORTANT: Devices running stock firmware version >= 1.1.01.272918 require the signed recovery image.  Details below.**
+* **IMPORTANT: The recovery image files do **not** have the word _installer_ in the filename.**
 
-1. Flash `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb` (note that this file doesn't have the word _installer_ in its filename), use `_signed.itb` variant if running stock firmware >= 1.1.
+1. Flash the Recovery Image to the device.
+  * If running stock firmware < 1.1.01.272918, flash the **unsigned** image: `openwrt-...-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb`
+  * Otherwise, when stock firmware is >= 1.1.01.272918, flash the **signed** image: `openwrt-...-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery_signed.itb`
 2. Backup
    
    - Via LuCi web-interface
