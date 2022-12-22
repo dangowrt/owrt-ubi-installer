@@ -43,8 +43,8 @@ You'll need the below to use the script to generate the installer image:
 6. You should then be greeted by the login screen, the stock password is "admin".
 7. Navigate to __Administration__ -> __Firmware Upgrade__.
 8. Upload the firmware "installer" image
-  * If running stock firmware < 1.1.01.272918, upload the **unsigned** image: `openwrt-...-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb`
-  * Otherwise, when stock firmware is >= 1.1.01.272918, upload the **signed** image: `openwrt-...-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer_signed.itb`
+  * If running stock firmware < 1.2.00.273012, upload the **unsigned** image: `openwrt-...-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb`
+  * Otherwise, when stock firmware is >= 1.2.00.273012, upload the **signed** image: `openwrt-...-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer_signed.itb`
 9. Wait for a minute, the OpenWrt recovery image should come up.
 9. Navigate to __System__ -> __Backup / Flash Firmware__.
 10. Upload `openwrt-...-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb`.
@@ -53,7 +53,7 @@ You'll need the below to use the script to generate the installer image:
 
 ## Downgrading Firmware - (If installer image upload was rejected)
 * **IMPORTANT: Before downgrading, verify that the rejected upload was the correct, signed or unsigned, installer image to use for the currently running firmware version. (i.e. Maybe try uploading the 'other' installer image file first.)  Most rejected uploads are probably related to signed vs. unsigned image compatibility.**
-* **Note: It may not be possible to downgrade devices with "signed" stock firmware, i.e. versions >= 1.1.01.272918, including 1.2.x versions.**
+* **Note: It may not be possible to downgrade devices with "signed" stock firmware, i.e. versions >= 1.2.00.273012.**
 1. Download Stock Vendor Firmware
  * For Linksys E8450 [FW_E8450_1.0.01.101415_prod.img] (https://downloads.linksys.com/support/assets/firmware/FW_E8450_1.0.01.101415_prod.img)
  * For Belkin RT3200 [FW_RT3200_1.0.01.101415_prod.img] (https://s3.belkin.com/support/assets/belkin/firmware/FW_RT3200_1.0.01.101415_prod.img)
@@ -110,12 +110,12 @@ This keep user configuration but still allow restoring or upgrading from [ssh](h
 ## Device flash complete backup procedure
 
 #### Steps
-* **IMPORTANT: Devices running stock firmware version >= 1.1.01.272918 require the signed recovery image.  Details below.**
+* **IMPORTANT: Devices running stock firmware version >= 1.2.00.273012 require the signed recovery image.  Details below.**
 * **IMPORTANT: The recovery image files do **not** have the word _installer_ in the filename.**
 
 1. Flash the Recovery Image to the device.
-  * If running stock firmware < 1.1.01.272918, flash the **unsigned** image: `openwrt-...-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb`
-  * Otherwise, when stock firmware is >= 1.1.01.272918, flash the **signed** image: `openwrt-...-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery_signed.itb`
+  * If running stock firmware < 1.2.00.273012, flash the **unsigned** image: `openwrt-...-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb`
+  * Otherwise, when stock firmware is >= 1.2.00.273012, flash the **signed** image: `openwrt-...-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery_signed.itb`
 2. Backup
    
    - Via LuCi web-interface
