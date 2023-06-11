@@ -250,7 +250,7 @@ bundle_initrd() {
 }
 
 linksys_e8450_installer() {
-	OPENWRT_RELEASE="22.03.4"
+	OPENWRT_RELEASE="22.03.5"
 	OPENWRT_TARGET="https://downloads.openwrt.org/releases/${OPENWRT_RELEASE}/targets/mediatek/mt7622"
 	OPENWRT_IB="openwrt-imagebuilder-${OPENWRT_RELEASE}-mediatek-mt7622.Linux-x86_64.tar.xz"
 	OPENWRT_INITRD="openwrt-${OPENWRT_RELEASE}-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
