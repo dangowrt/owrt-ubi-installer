@@ -1,107 +1,58 @@
-# This is a basic workflow to help you get started with Actions
-
 name: CI
 
-# Controls when the action will run. 
 on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "tag name"
+        required: true
+        type: string
+      no_release:
+        description: "no_release"
+        required: true
+        type: boolean
+
   push:
     # Triggers on every tag starting with v
     tags:
       - v*
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-22.04
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+    runs-on: ubuntu-latest
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Install libfdt-dev and cmake
         run: sudo apt install libfdt-dev cmake squashfs-tools
 
       - name: Run builder script
-        run: mkdir -m 0700 $HOME/.gnupg ; bash build_installer.sh
-
-#      - name: Store created images
-#        uses: actions/upload-artifact@v2
-#        with:
-#          name: images
-#          path: |
-#            *.itb
-
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
-
-      - name: Determine filenames
         run: |
-          echo "SYSUPGRADE_ITB=$(ls -1 | grep sysupgrade.itb)" >> "$GITHUB_ENV"
-          echo "RECOVERY_ITB=$(ls -1 | grep recovery.itb)" >> "$GITHUB_ENV"
-          echo "RECOVERY_SIGNED_ITB=$(ls -1 | grep recovery_signed.itb)" >> "$GITHUB_ENV"
-          echo "INSTALLER_ITB=$(ls -1 | grep installer.itb)" >> "$GITHUB_ENV"
-          echo "INSTALLER_SIGNED_ITB=$(ls -1 | grep installer_signed.itb)" >> "$GITHUB_ENV"
+          mkdir -m 0700 $HOME/.gnupg
+          bash build_installer.sh
 
-      - name: Upload sysupgrade
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: upload-artifact - images
+        uses: actions/upload-artifact@v3
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.SYSUPGRADE_ITB }}
-          asset_name: ${{ env.SYSUPGRADE_ITB }}
-          asset_content_type: application/octet-stream
+          name: images
+          path: "*.itb"
 
-      - name: Upload recovery
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.RECOVERY_ITB }}
-          asset_name: ${{ env.RECOVERY_ITB }}
-          asset_content_type: application/octet-stream
+  release:
+    if: inputs.no_release == '0'
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Upload signed recovery
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.RECOVERY_SIGNED_ITB }}
-          asset_name: ${{ env.RECOVERY_SIGNED_ITB }}
-          asset_content_type: application/octet-stream
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
 
-      - name: Upload recovery installer
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.INSTALLER_ITB }}
-          asset_name: ${{ env.INSTALLER_ITB }}
-          asset_content_type: application/octet-stream
+      # https://cli.github.com/manual/gh_release_create
+      - name: Create Release
+        run: gh release create ${{ inputs.tag || github.ref_name }}
 
-      - name: Upload signed recovery installer
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.INSTALLER_SIGNED_ITB }}
-          asset_name: ${{ env.INSTALLER_SIGNED_ITB }}
-          asset_content_type: application/octet-stream
+      # https://cli.github.com/manual/gh_release_upload
+      - name: Upload assets
+        run: gh release upload ${{ inputs.tag || github.ref_name }} images/*.itb --clobber
