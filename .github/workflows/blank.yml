@@ -32,7 +32,7 @@ jobs:
           bash build_installer.sh
 
       - name: upload-artifact - images
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: images
           path: "*.itb"
