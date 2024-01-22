@@ -9,10 +9,12 @@ echo OpenWrt UBI installer
 echo
 
 INSTALLER_DIR="/installer"
-PRELOADER="$INSTALLER_DIR/mt7622-snand-1ddr-bl2.img"
+PRELOADER="$INSTALLER_DIR/mt7622-snand-ubi-1ddr-bl2.img"
 FIP="$INSTALLER_DIR/mt7622_linksys_e8450-u-boot.fip"
 RECOVERY="$(ls -1 $INSTALLER_DIR/openwrt-*mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb)"
 HAS_ENV=1
+HAS_FIP=1
+HAS_FACTORY=1
 
 if [ ! -s "$PRELOADER" ] || [ ! -s "$FIP" ] || [ ! -s "$RECOVERY" ]; then
 	echo "Missing files. Aborting."
@@ -20,15 +22,24 @@ if [ ! -s "$PRELOADER" ] || [ ! -s "$FIP" ] || [ ! -s "$RECOVERY" ]; then
 	exit 1
 fi
 
-install_fix_factory() {
-	local mtddev=$1
-	local assertm=$2
+ubi_mknod() {
+	local dev="$1"
+	dev="${dev##*/}"
+	[ -e "/sys/class/ubi/$dev/uevent" ] || return 2
+	source "/sys/class/ubi/$dev/uevent"
+	mknod "/dev/$dev" c $MAJOR $MINOR
+}
+
+install_get_factory() {
+	local mtddev="$1"
 	local ebs=$(cat /sys/class/mtd/$(basename $mtddev)/erasesize)
-	local off=0
-	local skip=0
+	local assertm="$3"
+	local init_off="$2"
+	local off=$init_off
+	local skip="$((init_off / ebs))"
 	local found
 
-	while [ $((off)) -lt $((2 * ebs)) ]; do
+	while [ $((off)) -lt $((init_off + 4 * ebs)) ]; do
 		magic="$(hexdump -v -s $off -n 2 -e '"%02x"' $1)"
 		if [ "$magic" = "$assertm" ]; then
 			found=1
@@ -38,20 +49,17 @@ install_fix_factory() {
 		skip=$((skip + 1))
 	done
 
-	if ! [ "$found" = "1" ]; then
-		echo "factory partition not found anywhere, aborting"
-		exit 1
+	if [ "$found" != "1" ]; then
+		echo "factory partition not found on raw flash offset"
+		return 1
 	fi
 
-	echo -n "found factory partition at offset $(printf %08x $((off))), rewriting..."
+	echo -n "found factory partition at offset $(printf %08x $((off)))"
 
-	dd if=$mtddev bs=$ebs skip=$skip count=1 of=/tmp/factory-fixed
-	mtd write /tmp/factory-fixed $mtddev
-	local magic="$(hexdump -v -n 2 -e '"%02x"' $mtddev)"
-	[ "$magic" = "$assertm" ] || exit 1
+	dd if=$mtddev bs=$ebs skip=$skip count=1 of=/tmp/eeproms
 }
 
-install_fix_macpart() {
+install_get_macblock() {
 	local mtddev=$1
 	local blockoff=$2
 	local macoff=$3
@@ -62,11 +70,12 @@ install_fix_macpart() {
 	local found
 
 	while [ $((blockoff)) -le $((destoff + (2 * ebs))) ]; do
-		readm1=$(hexdump -s $((blockoff + macoff)) -v -n 6 -e '6/1 "%02x"' /dev/mtd2)
-		readm2=$(hexdump -s $((blockoff + macoff + 6)) -v -n 6 -e '6/1 "%02x"' /dev/mtd2)
+		readm1=$(hexdump -s $((blockoff + macoff)) -v -n 6 -e '6/1 "%02x"' "$1")
+		readm2=$(hexdump -s $((blockoff + macoff + 6)) -v -n 6 -e '6/1 "%02x"' "$1")
 		# that doesn't look valid to beging with...
 		if [ "${readm1:0:6}" = "000000" ] ||
 		   [ "${readm1:0:2}" = "f0" ] ||
+		   [ "${readm1:0:2}" = "ff" ] ||
 		   [ "$((((0x${readm1:0:2})>>2)<<2))" != "$((0x${readm1:0:2}))" ]; then
 			blockoff=$((blockoff + ebs))
 			skip=$((skip + 1))
@@ -80,20 +89,19 @@ install_fix_macpart() {
 			found=1
 			break
 		fi
-		skip=$((skip + 1))
 		blockoff=$((blockoff + ebs))
+		skip=$((skip + 1))
 	done
 
 	if ! [ "$found" = "1" ]; then
 		echo "mac addresses not found anywhere in factory partition, aborting"
-		exit 1
+		return 1
 	fi
 
 	[ $((blockoff)) -eq $((destoff)) ] ||
-		echo "mac addresses block shifted by 0x$(printf %08x $((blockoff - destoff))), fixing."
+		echo "mac addresses block shifted by 0x$(printf %08x $((blockoff - destoff)))!."
 
-	dd if=$mtddev bs=$ebs skip=$skip count=1 of=/tmp/macs-fixed
-	mtd -p $destoff -l $ebs write /tmp/macs-fixed $mtddev
+	dd if=$mtddev bs=$ebs skip=$skip count=1 of=/tmp/macs
 }
 
 install_prepare_backup() {
@@ -107,8 +115,9 @@ install_prepare_backup() {
 
 install_write_backup() {
 	echo "writing backup files to ubi volume..."
-	ubimkvol /dev/ubi0 -s 8MiB -n 3 -N boot_backup
-	mount -t ubifs /dev/$(nand_find_volume ubi0 boot_backup) /mnt
+	ubimkvol /dev/ubi0 -n 6 -s 8MiB -N boot_backup
+	ubi_mknod ubi0_6
+	mount -t ubifs /dev/ubi0_6 /mnt
 	cp /tmp/backup/mtd* /mnt
 	umount /mnt
 }
@@ -121,44 +130,43 @@ install_prepare_ubi() {
 	ubiattach -p $mtddev
 	sync
 	sleep 1
-	[ -e /sys/class/ubi/ubi0 ] || exit 1
-	devminormajor=$(cat /sys/class/ubi/ubi0/dev)
-	oIFS=$IFS
-	IFS=':'
-	set -- $devminormajor
-	devminor=$1
-	devmajor=$2
-	IFS=$oIFS
-	[ -e /dev/ubi0 ] || mknod /dev/ubi0 c $devminor $devmajor
-	[ "$HAS_ENV" = "1" ] && ubimkvol /dev/ubi0 -n 0 -s 1MiB -N ubootenv && ubimkvol /dev/ubi0 -n 1 -s 1MiB -N ubootenv2
+	[ -e /dev/ubi0 ] || ubi_mknod ubi0
+	[ "$HAS_FIP" = "1" ] && ubimkvol /dev/ubi0 -n 0 -t static -s $(cat $FIP | wc -c) -N fip && ubi_mknod ubi0_0 && ubiupdatevol /dev/ubi0_0 "$FIP"
+	[ "$HAS_FACTORY" = "1" ] && ubimkvol /dev/ubi0 -n 1 -t static -s $(cat "/tmp/factory" | wc -c) -N factory && ubi_mknod ubi0_1 && ubiupdatevol /dev/ubi0_1 "/tmp/factory"
+	[ "$HAS_ENV" = "1" ] && ubimkvol /dev/ubi0 -n 2 -s 126976 -N ubootenv && ubimkvol /dev/ubi0 -n 3 -s 126976 -N ubootenv2
 }
 
-# Linksys E8450 got factory data in /dev/mtd2
-# things may be shifted due to MTK BMT/BBT being used previously, fix that
+# backup mtd0...mtd1, max. 32x 128kb block
+install_prepare_backup 1 32
 
-# backup mtd0...mtd3, max. 16x 128kb block
-install_prepare_backup 3 16
+# Linksys E8450 got factory data stored in MTD partition Factory at 0x1c0000
+# things may be shifted due to MTK BMT/BBT being used previously, take that
+# into account while extracting
 
-# rewrite two mac addresses are stored at correct offset in factory partition
-install_fix_macpart /dev/mtd2 0x60000 0x1fff4
+# extract wifi eeprom from Factory MTD partition
+install_get_factory /dev/mtd1 0x140000 "7622" || exit 1
 
-# make sure wifi eeprom starts at correct offset and rewrite to fix ECC
-install_fix_factory /dev/mtd2 "7622"
+# two mac addresses are stored in Factory partition
+install_get_macblock /dev/mtd1 0x1a0000 0x1fff4 || exit 1
+
+# assemble factory blob
+dd if=/dev/full of=/tmp/factory bs=524288 count=1
+dd if=/tmp/eeproms of=/tmp/factory conv=notrunc
+dd if=/tmp/macs of=/tmp/factory bs=131072 seek=3 count=1
 
 echo "redundantly write bl2 into the first 4 blocks"
 for bl2start in 0x0 0x20000 0x40000 0x60000 ; do
 	mtd -p $bl2start write $PRELOADER /dev/mtd0
 done
 
-echo "write FIP to NAND"
-mtd write $FIP /dev/mtd1
-
-install_prepare_ubi /dev/mtd3
+install_prepare_ubi /dev/mtd1
 
 echo "write recovery ubi volume"
 RECOVERY_SIZE=$(cat $RECOVERY | wc -c)
-ubimkvol /dev/ubi0 -s $RECOVERY_SIZE -n 2 -N recovery
-ubiupdatevol /dev/$(nand_find_volume ubi0 recovery) $RECOVERY
+ubimkvol /dev/ubi0 -n 4 -s $RECOVERY_SIZE -N recovery
+ubi_mknod ubi0_4
+ubiupdatevol /dev/ubi0_4 $RECOVERY
+ubimkvol /dev/ubi0 -n 5 -s 126976 -N fit
 
 install_write_backup
 
