@@ -10,7 +10,7 @@ https://user-images.githubusercontent.com/82453643/147394017-e7af122c-8234-4f11-
 
 If you plan to ever go back to the stock firmware, you will need a backup of the vendor bootchain and firmware. When going back to the stock firmware, be prepared to connect to the internal serial port in case there are any bad blocks.
 
-**WARNING #3** The installer is meant to be executed only once per device unless an update explicitely requires a bootloader update. In that case, make sure to copy the content of the `boot_backup` UBI volume off the device before re-running the installer, so you will still have a copy of the stock bootchain! Executing the installer more than once should be avoided in all other cases! Use normal *-linksys_e8450-ubi-squashfs-sysupgrade.itb images provided by openwrt.org instead.
+**WARNING #3** The installer is meant to be executed only once per device unless an update explicitly requires a bootloader update. In that case, make sure to copy the content of the `boot_backup` UBI volume off the device before re-running the installer, so you will still have a copy of the stock bootchain! Executing the installer more than once should be avoided in all other cases! Use normal *-linksys_e8450-ubi-squashfs-sysupgrade.itb images provided by openwrt.org instead.
 
 ## Table of Contents
 * [Script information](#script-information)
