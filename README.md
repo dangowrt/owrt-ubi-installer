@@ -17,7 +17,6 @@ If you plan to ever go back to the stock firmware, you will need a backup of the
 * [Installing OpenWrt](#installing-openwrt)
 * [Upgrading to the latest OpenWrt snapshot](#upgrading-to-the-latest-openwrt-snapshot)
 * [Enter recovery mode under OpenWrt](#enter-recovery-mode-under-openwrt)
-* [Device flash complete backup procedure](#device-flash-complete-backup-procedure)
 * [Restoring the vendor/official firmware](#restoring-the-vendorofficial-firmware)
 
 
@@ -109,44 +108,13 @@ This will remove any user configuration and allow restoring or upgrading from [s
 This keep user configuration but still allow restoring or upgrading from [ssh](https://openwrt.org/docs/guide-user/installation/sysupgrade.cli)/http/[tftp](https://openwrt.org/docs/guide-user/installation/generic.flashing.tftp).
 
 
-## Device flash complete backup procedure
-
-#### Steps
-* **IMPORTANT: Devices running stock firmware version >= 1.2.00.273012 require the signed recovery image.  Details below.**
-* **IMPORTANT: The recovery image files do **not** have the word _installer_ in the filename.**
-
-1. Flash the Recovery Image to the device.
-  * If running stock firmware < 1.2.00.273012, flash the **unsigned** image: `openwrt-...-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb`
-  * Otherwise, when stock firmware is >= 1.2.00.273012, flash the **signed** image: `openwrt-...-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery_signed.itb`
-2. Backup
-   
-   - Via LuCi web-interface
-      - Login [http://192.168.1.1](http://192.168.1.1/cgi-bin/luci/admin/system/flash), then navigate to **System -> Backup / Flash Firmware** and save a copy of each of the `mtdblock`. **Resist the temptation to flash anything from this page! You will likely need serial console access to repair the device.** Make sure the `mtdblock` file size make sense as users have reported that they found their files have 0 bytes. In that case backup via `SSH` (see below) as an alternate method to backup the `mtdblock` files.
-   
-   - Via SSH (alternate backup method)
-   
-      - We are going to make a **complete backup** of the device (**includes original/vendor firmware**), connect to the device via SSH and enter the following commands:
-
-         ```
-         cd /dev
-         for part in mtd[0123] ; do
-         dd if=$part of=/tmp/$part
-         done
-         ```
-
-      - Then, copy the resulting **mtdx** files found in the `/tmp` folder on the router to the computer using **scp** or [WinSCP](https://winscp.net/eng/downloads.php) (the size of the *mtd3* file has to be **125MB** and make sure the size of the other files is the same, when you copy them to the computer).
-3. **Perform a powercycle** to reboot into the original/vendor firmware (**to perform a powercycle**, unplug the device from the power source for about 30 seconds before plugging it back). In case the router does not reboot into the original/vendor firmware, but back into the OpenWrt initramfs system, don't worry (this may happen). Try another powercycle, or the `reboot` command via SSH. But don't try to go back to original/vendor firmware by flashing a firmware image!
-4. When the device is running **original/vendor firmware**, perform a factory reset.
-
-**Do not attempt to flash anything** (that includes the stock firmware, `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery-installer.itb` etc.) from the running **initramfs system** -- it will fail to reboot, possibly requiring serial console access. Instead, **powercycle** the device to reboot into the original non-ubi firmware, and then flash the `installer` version.
-
 ## Restoring the vendor/official firmware ##
 # :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: :warning: 
 #### Bad blocks are **not** handled in the way the stock firmware and loader expects it. Ie. if you are lucky enough to own a device which got a bad block in the first ~22MiB of the SPI-NAND flash, then you will need to flash using TFTP which can only be triggered using the boot menu accessible via the serial console.
 ### Be prepared to open the device and wire up the serial console!
 
 1. Boot into recovery mode, either by flashing `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb` (note that this file doesn't have the word _installer_ in its filename) *or* by holding the RESET button while connecting the device to power *or* by issuing `echo c > /proc/sysrq-trigger` while running the production firmware. 
-2. Use **scp** or [WinSCP](https://winscp.net/eng/downloads.php) to copy the *mtdx* files to the `/tmp` folder on the router (the [**complete backup**](#device-flash-complete-backup-procedure) that you have on your computer), which is the **original/vendor bootchain and firmware** (the size of the *mtd3* file has to be **125MB** and make sure the size of the other files is the same, when you copy them to the router). In case you only got the [**minimal backup**](#backup-stockvendor-bootchain) (*mtd3* file size is **2MB**), also upload the [**original/vendor firmware**](#downgrade-firmware).
+2. Use **scp** or [WinSCP](https://winscp.net/eng/downloads.php) to copy the *mtdx* backup files to the `/tmp` folder on the router, which is the **original/vendor bootchain. Also upload the [**original/vendor firmware**](#downgrade-firmware).
 3. Connect to the device via SSH and enter the following commands:
 ```
 ubidetach -d 0
@@ -156,7 +124,9 @@ mtd write /tmp/mtd1 /dev/mtd1
 mtd write /tmp/mtd2 /dev/mtd2
 mtd write /tmp/mtd3 /dev/mtd3
 ```
-In case you were using the [**minimal backup**](#backup-stockvendor-bootchain) files, now write the **original/vendor firmware**:
+As the partition layout of the UBI-build also has changed, make sure to write things to the correct place in case your backup has been done at a point when the partition layout was different from what it is now.
+
+Now write the **original/vendor firmware**:
 ```
 # On Linksys E8450
 mtd -p 0x200000 write /tmp/FW_E8450_1.0.01.101415_prod.img /dev/mtd3
@@ -165,4 +135,3 @@ mtd -p 0x200000 write /tmp/FW_E8450_1.0.01.101415_prod.img /dev/mtd3
 mtd -p 0x200000 write /tmp/FW_RT3200_1.0.01.101415_prod.img /dev/mtd3
 ```
 4. Reboot the device and wait about a minute for it to be ready.
-5. If you use the [**complete backup**](#device-flash-complete-backup-procedure), after rebooting, the router will boot into the **initramfs system**, you will need **perform a powercycle** to reboot into the original/vendor firmware (**to perform a powercycle**, unplug the device from the power source for about 30 seconds before plugging it back).
