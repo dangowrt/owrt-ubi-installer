@@ -262,7 +262,7 @@ linksys_e8450_installer() {
 #	OPENWRT_INITRD="openwrt-${OPENWRT_RELEASE}-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
 	OPENWRT_SYSUPGRADE="openwrt-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb"
 #	OPENWRT_SYSUPGRADE="openwrt-${OPENWRT_RELEASE}-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb"
-	OPENWRT_ADD_REC_PACKAGES=(uhttpd luci-mod-admin-full luci-theme-bootstrap)
+	OPENWRT_ADD_REC_PACKAGES=(fitblk uhttpd luci-mod-admin-full luci-theme-bootstrap)
 	OPENWRT_REMOVE_PACKAGES=(firewall4 kmod-mt7622-firmware kmod-mt7915-firmware kmod-mt7615e kmod-mt7615-common kmod-mt7915e kmod-mt76-connac kmod-mt76-core kmod-firewall4 nftables kmod-nft-offload odhcp6c odhcpd-ipv6only ppp ppp-mod-pppoe wpad-basic-mbedtls)
 	OPENWRT_ADD_PACKAGES=()
 	VENDOR_FW="https://web.archive.org/web/20220511153700if_/https://www.belkin.com/support/assets/belkin/firmware/FW_RT3200_1.1.01.272918_PROD_unsigned.img"
