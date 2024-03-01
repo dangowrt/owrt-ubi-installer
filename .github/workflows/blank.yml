@@ -58,4 +58,4 @@ jobs:
 
       # https://cli.github.com/manual/gh_release_upload
       - name: Upload assets
-        run: gh release upload ${{ inputs.tag || github.ref_name }} images/*.itb --clobber
+        run: gh release upload ${{ inputs.tag || github.ref_name }} images/*.*i* --clobber

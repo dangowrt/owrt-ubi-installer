@@ -261,6 +261,13 @@ build_bl2_for_uartboot()
 	cp "${WORKDIR}/arm-trusted-firmware/build/mt7622/release/bl2.bin" "${DESTDIR}/bl2-for-mtk_uartboot.bin"
 }
 
+build_bl2_for_snfi_debug()
+{
+	git clone https://github.com/mtk-openwrt/arm-trusted-firmware.git "${WORKDIR}/arm-trusted-firmware-debug"
+	make -C "${WORKDIR}/arm-trusted-firmware-debug" CROSS_COMPILE=aarch64-linux-gnu- PLAT=$TFA_PLAT UBI=1 OVERRIDE_UBI_START_ADDR=0x80000 LOG_LEVEL=50 BOOT_DEVICE=snand $TFA_MAKEARGS bl2
+	cp "${WORKDIR}/arm-trusted-firmware-debug/build/mt7622/release/bl2.bin" "${DESTDIR}/bl2-for-debug-snand-issue.bin"
+}
+
 linksys_e8450_installer() {
 	TFA_PLAT=mt7622
 #	OPENWRT_RELEASE="23.05.0"
@@ -310,6 +317,7 @@ linksys_e8450_installer() {
 	fi
 
 	build_bl2_for_uartboot
+	build_bl2_for_snfi_debug
 
 	mv "${WORKDIR}/${FILEBASE}-installer"* "${DESTDIR}"
 	rm -rf "${WORKDIR}"
