@@ -26,7 +26,8 @@ DTC=
 FILEBASE=
 WORKDIR=
 ITSFILE=
-
+TFA_PLAT=
+TFA_MAKEARGS=
 
 prepare_openwrt_ib() {
 	GNUPGHOME="$(mktemp -d)"
@@ -252,7 +253,16 @@ bundle_initrd() {
 	esac
 }
 
+
+build_bl2_for_uartboot()
+{
+	git clone https://github.com/mtk-openwrt/arm-trusted-firmware.git "${WORKDIR}/arm-trusted-firmware"
+	make -C "${WORKDIR}/arm-trusted-firmware" CROSS_COMPILE=aarch64-linux-gnu- PLAT=$TFA_PLAT RAM_BOOT_UART_DL=1 BOOT_DEVICE=ram $TFA_MAKEARGS bl2
+	cp "${WORKDIR}/arm-trusted-firmware/build/mt7622/release/bl2.bin" "${DESTDIR}/bl2-for-mtk_uartboot.bin"
+}
+
 linksys_e8450_installer() {
+	TFA_PLAT=mt7622
 #	OPENWRT_RELEASE="23.05.0"
 	OPENWRT_TARGET="https://downloads.openwrt.org/snapshots/targets/mediatek/mt7622"
 #	OPENWRT_TARGET="https://downloads.openwrt.org/releases/${OPENWRT_RELEASE}/targets/mediatek/mt7622"
@@ -299,8 +309,10 @@ linksys_e8450_installer() {
 		rm "${INSTALLERDIR}/dl/vendor.bin"
 	fi
 
+	build_bl2_for_uartboot
+
 	mv "${WORKDIR}/${FILEBASE}-installer"* "${DESTDIR}"
-	rm -r "${WORKDIR}"
+	rm -rf "${WORKDIR}"
 }
 
 linksys_e8450_installer
