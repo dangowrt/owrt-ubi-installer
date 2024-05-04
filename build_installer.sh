@@ -53,7 +53,7 @@ prepare_openwrt_ib() {
 	wget -c "${OPENWRT_TARGET}/${OPENWRT_IB}"
 	sha256sum -c sha256sums --ignore-missing || exit 1
 	mkdir -p "${OPENWRT_DIR}" || exit 1
-	tar -xJf "${INSTALLERDIR}/dl/${OPENWRT_IB}" -C "${OPENWRT_DIR}" --strip-components=1
+	tar -xf "${INSTALLERDIR}/dl/${OPENWRT_IB}" -C "${OPENWRT_DIR}" --strip-components=1
 	DTC="$(ls -1 "${OPENWRT_DIR}/build_dir/target-aarch64_cortex-a53_musl/linux-mediatek_mt7622/linux-"*"/scripts/dtc/dtc")"
 	[ -x "$DTC" ] || {
 		echo "can't find dtc executable in OpenWrt IB"
@@ -273,8 +273,8 @@ linksys_e8450_installer() {
 #	OPENWRT_RELEASE="23.05.0"
 	OPENWRT_TARGET="https://downloads.openwrt.org/snapshots/targets/mediatek/mt7622"
 #	OPENWRT_TARGET="https://downloads.openwrt.org/releases/${OPENWRT_RELEASE}/targets/mediatek/mt7622"
-	OPENWRT_IB="openwrt-imagebuilder-mediatek-mt7622.Linux-x86_64.tar.xz"
-#	OPENWRT_IB="openwrt-imagebuilder-${OPENWRT_RELEASE}-mediatek-mt7622.Linux-x86_64.tar.xz"
+	OPENWRT_IB="openwrt-imagebuilder-mediatek-mt7622.Linux-x86_64.tar.zst"
+#	OPENWRT_IB="openwrt-imagebuilder-${OPENWRT_RELEASE}-mediatek-mt7622.Linux-x86_64.tar.zst"
 	OPENWRT_INITRD="openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
 #	OPENWRT_INITRD="openwrt-${OPENWRT_RELEASE}-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
 	OPENWRT_SYSUPGRADE="openwrt-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb"
