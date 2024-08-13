@@ -23,11 +23,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Update package lists
-        run: sudo apt update
-
-      - name: Install libfdt-dev, cmake and cross toolchain
-        run: sudo apt install libfdt-dev cmake squashfs-tools gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
+      - name: Install libfdt-dev and cmake
+        run: sudo apt install libfdt-dev cmake squashfs-tools
 
       - name: Run builder script
         run: |
@@ -38,7 +35,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: images
-          path: "*.*i*"
+          path: "*.itb"
 
   release:
     if: inputs.no_release == '0'
