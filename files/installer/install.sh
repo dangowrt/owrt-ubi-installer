@@ -136,6 +136,11 @@ install_prepare_ubi() {
 	[ "$HAS_ENV" = "1" ] && ubimkvol /dev/ubi0 -n 2 -s 126976 -N ubootenv && ubimkvol /dev/ubi0 -n 3 -s 126976 -N ubootenv2
 }
 
+trigger_crash() {
+	echo "INSTALLER: $@" > /dev/kmsg
+	echo c > /proc/sysrq-trigger
+}
+
 # backup mtd0...mtd1, max. 32x 128kb block
 install_prepare_backup 1 32
 
@@ -144,10 +149,10 @@ install_prepare_backup 1 32
 # into account while extracting
 
 # extract wifi eeprom from Factory MTD partition
-install_get_factory /dev/mtd1 0x140000 "7622" || exit 1
+install_get_factory /dev/mtd1 0x140000 "7622" || trigger_crash "cannot find Wi-Fi EEPROM data"
 
 # two mac addresses are stored in Factory partition
-install_get_macblock /dev/mtd1 0x1a0000 0x1fff4 || exit 1
+install_get_macblock /dev/mtd1 0x1a0000 0x1fff4 || trigger_crash "cannot find MAC addresses"
 
 # assemble factory blob
 dd if=/dev/full of=/tmp/factory bs=524288 count=1
