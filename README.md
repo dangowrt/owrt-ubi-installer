@@ -28,6 +28,7 @@ You'll need the below to use the script to generate the installer image:
 * All [prerequisites of the OpenWrt ImageBuilder](https://openwrt.org/docs/guide-user/additional-software/imagebuilder#prerequisites) 
 * `libfdt-dev`
 * `cmake`
+* `zstd`
 
 **If you are not interested in building yourself**, the pre-built files are available [here](https://github.com/dangowrt/linksys-e8450-openwrt-installer/releases).
 
