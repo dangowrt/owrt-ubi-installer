@@ -8,8 +8,9 @@ RUN apt-get update && apt-get dist-upgrade -y && apt-get -y install \
     cmake \
     libfdt-dev \
     squashfs-tools \
+    zstd \
     && apt-get autoclean && apt-get autoremove
 
-RUN git clone https://github.com/dangowrt/owrt-ubi-installer.git /build
+COPY . /build
 WORKDIR /build
 RUN ./build_installer.sh
