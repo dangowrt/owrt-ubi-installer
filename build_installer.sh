@@ -196,6 +196,7 @@ bundle_initrd() {
 
 	[[ ${#OPENWRT_REMOVE_PACKAGES[@]} -gt 0 ]] && IPKG_NO_SCRIPT=1 IPKG_INSTROOT="${WORKDIR}/initrd" \
 		"${OPKG}" --offline-root="${WORKDIR}/initrd" -f "${WORKDIR}/initrd/etc/opkg.conf" \
+		--force-depends \
 		remove "${OPENWRT_REMOVE_PACKAGES[@]}"
 
 	PATH="$(dirname "${OPKG}"):$PATH" \
@@ -253,15 +254,18 @@ bundle_initrd() {
 }
 
 linksys_e8450_installer() {
-#	OPENWRT_RELEASE="23.05.0"
-	OPENWRT_TARGET="https://downloads.openwrt.org/snapshots/targets/mediatek/mt7622"
-#	OPENWRT_TARGET="https://downloads.openwrt.org/releases/${OPENWRT_RELEASE}/targets/mediatek/mt7622"
-	OPENWRT_IB="openwrt-imagebuilder-mediatek-mt7622.Linux-x86_64.tar.zst"
-#	OPENWRT_IB="openwrt-imagebuilder-${OPENWRT_RELEASE}-mediatek-mt7622.Linux-x86_64.tar.zst"
-	OPENWRT_INITRD="openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
-#	OPENWRT_INITRD="openwrt-${OPENWRT_RELEASE}-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
-	OPENWRT_SYSUPGRADE="openwrt-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb"
-#	OPENWRT_SYSUPGRADE="openwrt-${OPENWRT_RELEASE}-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb"
+	# This release is pinned instead of "snapshot", because the snapshot has transitioned to
+	# using APK instead of OPKG and it's not fully working yet (APK post-install scripts are
+	# broken for some packages we're interested in)
+	OPENWRT_RELEASE="24.10.0-rc5"
+	#OPENWRT_TARGET="https://downloads.openwrt.org/snapshots/targets/mediatek/mt7622"
+	OPENWRT_TARGET="https://downloads.openwrt.org/releases/${OPENWRT_RELEASE}/targets/mediatek/mt7622"
+	#OPENWRT_IB="openwrt-imagebuilder-mediatek-mt7622.Linux-x86_64.tar.zst"
+	OPENWRT_IB="openwrt-imagebuilder-${OPENWRT_RELEASE}-mediatek-mt7622.Linux-x86_64.tar.zst"
+	#OPENWRT_INITRD="openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
+	OPENWRT_INITRD="openwrt-${OPENWRT_RELEASE}-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
+	#OPENWRT_SYSUPGRADE="openwrt-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb"
+	OPENWRT_SYSUPGRADE="openwrt-${OPENWRT_RELEASE}-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb"
 	OPENWRT_ADD_REC_PACKAGES=(uhttpd luci-mod-admin-full luci-theme-bootstrap)
 	OPENWRT_REMOVE_PACKAGES=(firewall4 kmod-mt7622-firmware kmod-mt7915-firmware kmod-mt7615e kmod-mt7615-common kmod-mt7915e kmod-mt76-connac kmod-mt76-core kmod-firewall4 nftables kmod-nft-offload odhcp6c odhcpd-ipv6only ppp ppp-mod-pppoe wpad-basic-mbedtls)
 	OPENWRT_ADD_PACKAGES=()
