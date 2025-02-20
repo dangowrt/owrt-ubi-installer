@@ -12,7 +12,7 @@ OPENWRT_DIR="${INSTALLERDIR}/openwrt-ib"
 
 CPIO="${OPENWRT_DIR}/staging_dir/host/bin/cpio"
 MKIMAGE="${OPENWRT_DIR}/staging_dir/host/bin/mkimage"
-OPKG="${OPENWRT_DIR}/staging_dir/host/bin/opkg"
+APK="${OPENWRT_DIR}/staging_dir/host/bin/apk"
 XZ="${OPENWRT_DIR}/staging_dir/host/bin/xz"
 
 UNFIT="${INSTALLERDIR}/unfit"
@@ -195,43 +195,31 @@ bundle_initrd() {
 	extract_initrd
 
 	[[ ${#OPENWRT_REMOVE_PACKAGES[@]} -gt 0 ]] && IPKG_NO_SCRIPT=1 IPKG_INSTROOT="${WORKDIR}/initrd" \
-		"${OPKG}" --offline-root="${WORKDIR}/initrd" -f "${WORKDIR}/initrd/etc/opkg.conf" \
-		remove "${OPENWRT_REMOVE_PACKAGES[@]}"
+		"${APK}" --no-scripts --no-logfile --root "${WORKDIR}/initrd" del "${OPENWRT_REMOVE_PACKAGES[@]}"
 
-	PATH="$(dirname "${OPKG}"):$PATH" \
-	OPKG_KEYS="${WORKDIR}/initrd/etc/opkg/keys" \
+	PATH="$(dirname "${APK}"):$PATH" \
 	TMPDIR="${WORKDIR}/initrd/tmp" \
-		"${OPKG}" --offline-root="${WORKDIR}/initrd" -f "${WORKDIR}/initrd/etc/opkg.conf" \
-			--verify-program="${WORKDIR}/initrd/usr/sbin/opkg-key" \
-			update
+		"${APK}" --no-logfile --root "${WORKDIR}/initrd" update
 
 	[[ ${#OPENWRT_ADD_PACKAGES[@]} -gt 0 ]] && \
-		PATH="$(dirname "${OPKG}"):$PATH" \
-		OPKG_KEYS="${WORKDIR}/initrd/etc/opkg/keys" \
+		PATH="$(dirname "${APK}"):$PATH" \
 		TMPDIR="${WORKDIR}/initrd/tmp" \
 		IPKG_NO_SCRIPT=1 IPKG_INSTROOT="${WORKDIR}/initrd" \
-		"${OPKG}" --offline-root="${WORKDIR}/initrd" -f "${WORKDIR}/initrd/etc/opkg.conf" \
-		--verify-program="${WORKDIR}/initrd/usr/sbin/opkg-key" \
-		--force-postinst install "${OPENWRT_ADD_PACKAGES[@]}"
+		"${APK}" --no-scripts --no-logfile --root "${WORKDIR}/initrd" add "${OPENWRT_ADD_PACKAGES[@]}"
 
 	case "$imgtype" in
 		recovery)
 			[[ ${#OPENWRT_ADD_REC_PACKAGES[@]} -gt 0 ]] && \
-			PATH="$(dirname "${OPKG}"):$PATH" \
-			OPKG_KEYS="${WORKDIR}/initrd/etc/opkg/keys" \
+			PATH="$(dirname "${APK}"):$PATH" \
 			TMPDIR="${WORKDIR}/initrd/tmp" \
 			IPKG_NO_SCRIPT=1 IPKG_INSTROOT="${WORKDIR}/initrd" \
-				"${OPKG}" --offline-root="${WORKDIR}/initrd" -f "${WORKDIR}/initrd/etc/opkg.conf" \
-				--verify-program="${WORKDIR}/initrd/usr/sbin/opkg-key" \
-				--force-postinst install "${OPENWRT_ADD_REC_PACKAGES[@]}"
+				"${APK}" --no-scripts --no-logfile --root "${WORKDIR}/initrd" add "${OPENWRT_ADD_REC_PACKAGES[@]}"
 			;;
 		installer)
 			cp -avr "${INSTALLERDIR}/files/"* "${WORKDIR}/initrd"
 			cp -v "$@" "${WORKDIR}/initrd/installer"
 			;;
 	esac
-
-	sed -i "s/Installed-Time: .*/Installed-Time: ${SOURCE_DATE_EPOCH}/" ${WORKDIR}/initrd/usr/lib/opkg/status
 
 	enable_services
 	rm -rf "${WORKDIR}/initrd/tmp/"*
