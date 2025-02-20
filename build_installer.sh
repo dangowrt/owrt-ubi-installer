@@ -53,7 +53,7 @@ prepare_openwrt_ib() {
 	sha256sum -c sha256sums --ignore-missing || exit 1
 	mkdir -p "${OPENWRT_DIR}" || exit 1
 	tar -xf "${INSTALLERDIR}/dl/${OPENWRT_IB}" -C "${OPENWRT_DIR}" --strip-components=1
-	DTC="$(ls -1 "${OPENWRT_DIR}/build_dir/target-aarch64_cortex-a53_musl/linux-mediatek_mt7622/linux-"*"/scripts/dtc/dtc")"
+	DTC="$(ls -1 "${OPENWRT_DIR}/build_dir/target-aarch64_cortex-a53_musl/linux-mediatek_filogic/linux-"*"/scripts/dtc/dtc")"
 	[ -x "$DTC" ] || {
 		echo "can't find dtc executable in OpenWrt IB"
 		exit 1
@@ -174,7 +174,18 @@ allow_mtd_write() {
 	grep -v 'read-only' "${WORKDIR}/fdt-1.dts" > "${WORKDIR}/fdt-1.dts.patched"
 	grep -v 'linux,ubi' "${WORKDIR}/fdt-1.dts.patched" > "${WORKDIR}/fdt-1.dts.patched2"
 	mv "${WORKDIR}/fdt-1.dts.patched2" "${WORKDIR}/fdt-1.dts.patched"
-	sed -i 's/"ubi"/"ibu"/' "${WORKDIR}/fdt-1.dts.patched"
+	sed -i 's/"ubi"/"newubi"/' "${WORKDIR}/fdt-1.dts.patched"
+	sed -i 's/"spi-nand"/"u-boot-dont-touch-spi-nand"/' "${WORKDIR}/fdt-1.dts.patched"
+	sed -i 's/partitions {/mtdparts: partitions {/' "${WORKDIR}/fdt-1.dts.patched"
+	cat >>"${WORKDIR}/fdt-1.dts.patched" <<EOF
+
+&mtdparts {
+	partition@400000 {
+		reg = <0x400000 0x7c00000>;
+		label = "OLD_UBI_DEV";
+	};
+};
+EOF
 	"$DTC" -I dts -O dtb -o "${WORKDIR}/fdt-1" "${WORKDIR}/fdt-1.dts.patched"
 }
 
@@ -235,26 +246,22 @@ bundle_initrd() {
 			;;
 		installer)
 			allow_mtd_write
+			EXTERNAL=
+			STATIC=
+			sed -i 's/<0x46000000>/<0x48080000>/' "${ITSFILE}"
 			refit_image 128k "$imgtype"
 			;;
 	esac
 }
 
-linksys_e8450_installer() {
-	OPENWRT_RELEASE="24.10.0"
-#	OPENWRT_TARGET="https://downloads.openwrt.org/snapshots/targets/mediatek/mt7622"
-	OPENWRT_TARGET="https://downloads.openwrt.org/releases/${OPENWRT_RELEASE}/targets/mediatek/mt7622"
-#	OPENWRT_IB="openwrt-imagebuilder-mediatek-mt7622.Linux-x86_64.tar.zst"
-	OPENWRT_IB="openwrt-imagebuilder-${OPENWRT_RELEASE}-mediatek-mt7622.Linux-x86_64.tar.zst"
-#	OPENWRT_INITRD="openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
-	OPENWRT_INITRD="openwrt-${OPENWRT_RELEASE}-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb"
-#	OPENWRT_SYSUPGRADE="openwrt-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb"
-	OPENWRT_SYSUPGRADE="openwrt-${OPENWRT_RELEASE}-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb"
-	OPENWRT_ADD_REC_PACKAGES=(uhttpd luci-mod-admin-full luci-theme-bootstrap firewall4)
-	OPENWRT_REMOVE_PACKAGES=(luci-ssl luci luci-light luci-app-firewall firewall4 kmod-mt7622-firmware kmod-mt7915-firmware kmod-mt7615e kmod-mt7615-common kmod-mt7915e kmod-mt76-connac kmod-mt76-core kmod-firewall4 nftables kmod-nft-offload odhcp6c odhcpd-ipv6only ppp ppp-mod-pppoe wpad-basic-mbedtls)
+asus_bt8_installer() {
+	OPENWRT_TARGET="https://downloads.openwrt.org/snapshots/targets/mediatek/filogic"
+	OPENWRT_IB="openwrt-imagebuilder-mediatek-filogic.Linux-x86_64.tar.zst"
+	OPENWRT_INITRD="openwrt-mediatek-filogic-asus_zenwifi-bt8-initramfs-recovery.itb"
+	OPENWRT_SYSUPGRADE="openwrt-mediatek-filogic-asus_zenwifi-bt8-squashfs-sysupgrade.itb"
+	OPENWRT_ADD_REC_PACKAGES=(uhttpd luci-mod-admin-full luci-theme-bootstrap)
+	OPENWRT_REMOVE_PACKAGES=(kmod-mt7996-firmware kmod-mt7996e kmod-mt76-connac kmod-mt76-core kmod-mt7996-firmware mt7988-wo-firmware odhcp6c odhcpd-ipv6only ppp ppp-mod-pppoe wpad-basic-mbedtls)
 	OPENWRT_ADD_PACKAGES=()
-	VENDOR_FW="https://web.archive.org/web/20220511153700if_/https://www.belkin.com/support/assets/belkin/firmware/FW_RT3200_1.1.01.272918_PROD_unsigned.img"
-	VENDOR_FW_HASH="01a9efa97120ff6692c252f2958269afbc87acd2528b281adfc8b55b0ca6cf8a"
 
 	prepare_openwrt_ib
 
@@ -271,24 +278,12 @@ linksys_e8450_installer() {
 	cp "${INSTALLERDIR}/dl/${OPENWRT_SYSUPGRADE}" "${DESTDIR}"
 
 	bundle_initrd installer "${INSTALLERDIR}/dl/${OPENWRT_INITRD}" \
-		"${OPENWRT_DIR}/staging_dir/target-aarch64_cortex-a53_musl/image/mt7622-snand-ubi-1ddr-bl2.img" \
-		"${OPENWRT_DIR}/staging_dir/target-aarch64_cortex-a53_musl/image/mt7622_linksys_e8450-u-boot.fip" \
+		"${OPENWRT_DIR}/staging_dir/target-aarch64_cortex-a53_musl/image/mt7988-spim-nand-ubi-ddr4-bl2.img" \
+		"${OPENWRT_DIR}/staging_dir/target-aarch64_cortex-a53_musl/image/mt7988_asus_zenwifi-bt8-u-boot.fip" \
 		"${DESTDIR}/${FILEBASE}.itb"
 
-	# thanks to @linksys for leaving private key in the firmware
-	wget -c -O "${INSTALLERDIR}/dl/vendor.bin" "${VENDOR_FW}"
-	vendorhash="$(sha256sum "${INSTALLERDIR}/dl/vendor.bin" | cut -d' ' -f1)"
-	if [ "$vendorhash" = "$VENDOR_FW_HASH" ]; then
-		unsquashfs -o 2621440 -d "${WORKDIR}/rootfs" "${INSTALLERDIR}/dl/vendor.bin" "/root/.gnupg/secring.gpg"
-		gpg --no-default-keyring --keyring "${INSTALLERDIR}/vendor-keyring" --import < "${WORKDIR}/rootfs/root/.gnupg/secring.gpg" || true
-		rm -f "${WORKDIR}/${FILEBASE}-installer_signed.itb"
-		gpg --no-default-keyring --keyring "${INSTALLERDIR}/vendor-keyring" --default-key 762AE637CDF0596EBA79444D99DAC426DCF76BA1 --trusted-key 16EBADDEF5B6755C -r aruba_recipient@linksys.com -s -e --batch --output "${WORKDIR}/${FILEBASE}-installer_signed.itb" "${WORKDIR}/${FILEBASE}-installer.itb" || true
-	else
-		rm "${INSTALLERDIR}/dl/vendor.bin"
-	fi
-
-	mv "${WORKDIR}/${FILEBASE}-installer"* "${DESTDIR}"
+	${MKIMAGE} -A arm64 -O linux -T kernel -C lzma -a 0x48080000 -e 0x48080000 -d "${WORKDIR}/${FILEBASE}-installer"* "${DESTDIR}/${FILEBASE}-installer.trx"
 	rm -r "${WORKDIR}"
 }
 
-linksys_e8450_installer
+asus_bt8_installer

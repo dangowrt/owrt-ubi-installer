@@ -1,6 +1,45 @@
 #!/bin/sh
 
+. /lib/functions.sh
 . /lib/upgrade/nand.sh
+
+led_pink() {
+	echo 0 > /sys/class/leds/red:status/brightness
+	echo 0 > /sys/class/leds/green:status/brightness
+	echo 0 > /sys/class/leds/blue:status/brightness
+	echo 80 > /sys/class/leds/green:status/brightness
+	echo 32 > /sys/class/leds/red:status/brightness
+	echo 48 > /sys/class/leds/blue:status/brightness
+	echo timer > /sys/class/leds/green:status/trigger
+	echo 1 > /sys/class/leds/green:status/delay_on
+	echo 70 > /sys/class/leds/green:status/delay_off
+}
+
+led_red() {
+	echo 0 > /sys/class/leds/red:status/brightness
+	echo 0 > /sys/class/leds/green:status/brightness
+	echo 0 > /sys/class/leds/blue:status/brightness
+	echo 255 > /sys/class/leds/red:status/brightness
+	echo timer > /sys/class/leds/red:status/trigger
+	echo 120 > /sys/class/leds/red:status/delay_on
+	echo 200 > /sys/class/leds/red:status/delay_off
+}
+
+led_green() {
+	echo 0 > /sys/class/leds/red:status/brightness
+	echo 0 > /sys/class/leds/green:status/brightness
+	echo 0 > /sys/class/leds/blue:status/brightness
+	echo 255 > /sys/class/leds/green:status/brightness
+}
+
+trigger_crash() {
+	led_red
+	sleep 5
+	echo "INSTALLER: $@" > /dev/kmsg
+	echo c > /proc/sysrq-trigger
+}
+
+led_pink
 
 sleep 1
 
@@ -9,17 +48,15 @@ echo OpenWrt UBI installer
 echo
 
 INSTALLER_DIR="/installer"
-PRELOADER="$INSTALLER_DIR/mt7622-snand-ubi-1ddr-bl2.img"
-FIP="$INSTALLER_DIR/mt7622_linksys_e8450-u-boot.fip"
-RECOVERY="$(ls -1 $INSTALLER_DIR/openwrt-*mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb)"
+PRELOADER="$INSTALLER_DIR/mt7988-spim-nand-ubi-ddr4-bl2.img"
+FIP="$INSTALLER_DIR/mt7988_asus_zenwifi-bt8-u-boot.fip"
+RECOVERY="$(ls -1 $INSTALLER_DIR/openwrt-*mediatek-filogic-asus_zenwifi-bt8-initramfs-recovery.itb)"
 HAS_ENV=1
 HAS_FIP=1
 HAS_FACTORY=1
 
 if [ ! -s "$PRELOADER" ] || [ ! -s "$FIP" ] || [ ! -s "$RECOVERY" ]; then
-	echo "Missing files. Aborting."
-	reboot
-	exit 1
+	trigger_crash "Missing files. Aborting."
 fi
 
 ubi_mknod() {
@@ -30,81 +67,29 @@ ubi_mknod() {
 	mknod "/dev/$dev" c $MAJOR $MINOR
 }
 
-install_get_factory() {
-	local mtddev="$1"
-	local ebs=$(cat /sys/class/mtd/$(basename $mtddev)/erasesize)
-	local assertm="$3"
-	local init_off="$2"
-	local off=$init_off
-	local skip="$((init_off / ebs))"
-	local found
+extract_ubi_volumes() {
+	local mtdname="$1"
+	local ubinum=31
+	local mtdnum="$(find_mtd_index "$mtdname")"
+	local voldev
+	shift
 
-	while [ $((off)) -lt $((init_off + 4 * ebs)) ]; do
-		magic="$(hexdump -v -s $off -n 2 -e '"%02x"' $1)"
-		if [ "$magic" = "$assertm" ]; then
-			found=1
-			break
-		fi
-		off=$((off + ebs))
-		skip=$((skip + 1))
+	for volname in "$@"; do
+		[ -e "/tmp/$volname" ] && return 1
 	done
 
-	if [ "$found" != "1" ]; then
-		echo "factory partition not found on raw flash offset"
-		return 1
-	fi
-
-	echo -n "found factory partition at offset $(printf %08x $((off)))"
-
-	dd if=$mtddev bs=$ebs skip=$skip count=1 of=/tmp/eeproms
-}
-
-install_get_macblock() {
-	local mtddev=$1
-	local blockoff=$2
-	local macoff=$3
-	local destoff=$blockoff
-	local ebs=$(cat /sys/class/mtd/$(basename $mtddev)/erasesize)
-	local skip=$((blockoff / ebs))
-	local readp1 readp2
-	local found
-
-	while [ $((blockoff)) -le $((destoff + (2 * ebs))) ]; do
-		readm1=$(hexdump -s $((blockoff + macoff)) -v -n 6 -e '6/1 "%02x"' "$1")
-		readm2=$(hexdump -s $((blockoff + macoff + 6)) -v -n 6 -e '6/1 "%02x"' "$1")
-		# that doesn't look valid to beging with...
-		if [ "${readm1:0:6}" = "000000" ] ||
-		   [ "${readm1:0:2}" = "f0" ] ||
-		   [ "${readm1:0:2}" = "ff" ] ||
-		   [ "$((((0x${readm1:0:2})>>2)<<2))" != "$((0x${readm1:0:2}))" ]; then
-			blockoff=$((blockoff + ebs))
-			skip=$((skip + 1))
-			continue
-		fi
-		# could be valid and contains two identical 3-bytes prefixes
-		if [ "${readm1:0:6}" = "${readm2:0:6}" ]; then
-			echo -n "Found MAC addresses block"
-			echo -n " LAN: ${readm1:0:2}:${readm1:2:2}:${readm1:4:2}:${readm1:6:2}:${readm1:8:2}:${readm1:10:2}"
-			echo    " WAN: ${readm2:0:2}:${readm2:2:2}:${readm2:4:2}:${readm2:6:2}:${readm2:8:2}:${readm2:10:2}"
-			found=1
-			break
-		fi
-		blockoff=$((blockoff + ebs))
-		skip=$((skip + 1))
+	ubiattach -m "$mtdnum" -d "$ubinum"
+	ubi_mknod "/dev/ubi$ubinum"
+	for volname in "$@"; do
+		voldev="$(nand_find_volume "ubi$ubinum" "$volname")"
+		[ "$voldev" ] || return 1
+		dd if="/dev/$voldev" of="/tmp/$volname"
 	done
-
-	if ! [ "$found" = "1" ]; then
-		echo "mac addresses not found anywhere in factory partition, aborting"
-		return 1
-	fi
-
-	[ $((blockoff)) -eq $((destoff)) ] ||
-		echo "mac addresses block shifted by 0x$(printf %08x $((blockoff - destoff)))!."
-
-	dd if=$mtddev bs=$ebs skip=$skip count=1 of=/tmp/macs
+	ubidetach -d "$ubinum"
+	return 0
 }
 
-install_prepare_backup() {
+install_prepare_mtd_backup() {
 	echo "preparing backup of relevant flash areas..."
 	mkdir /tmp/backup
 	for mtdnum in $(seq 0 $1); do
@@ -136,35 +121,27 @@ install_prepare_ubi() {
 	[ "$HAS_ENV" = "1" ] && ubimkvol /dev/ubi0 -n 2 -s 126976 -N ubootenv && ubimkvol /dev/ubi0 -n 3 -s 126976 -N ubootenv2
 }
 
-trigger_crash() {
-	echo "INSTALLER: $@" > /dev/kmsg
-	echo c > /proc/sysrq-trigger
+
+led_pink() {
+	echo 20 > /sys/class/leds/green:status/brightness
+	echo 220 > /sys/class/leds/red:status/brightness
+	echo 80 > /sys/class/leds/blue:status/brightness
 }
 
-# backup mtd0...mtd1, max. 32x 128kb block
-install_prepare_backup 1 32
+# backup mtd0...mtd1, max. 16x 128kb block each (ie. 0x0~0x400000)
+install_prepare_mtd_backup 1 16
 
-# Linksys E8450 got factory data stored in MTD partition Factory at 0x1c0000
-# things may be shifted due to MTK BMT/BBT being used previously, take that
-# into account while extracting
+extract_ubi_volumes OLD_UBI_DEV Factory Factory2 nvram || trigger_crash "Error extracting factory data"
 
-# extract wifi eeprom from Factory MTD partition
-install_get_factory /dev/mtd1 0x140000 "7622" || trigger_crash "cannot find Wi-Fi EEPROM data"
+cp /tmp/Factory /tmp/factory
+mv /tmp/nvram /tmp/Factory* /tmp/backup
 
-# two mac addresses are stored in Factory partition
-install_get_macblock /dev/mtd1 0x1a0000 0x1fff4 || trigger_crash "cannot find MAC addresses"
-
-# assemble factory blob
-dd if=/dev/full of=/tmp/factory bs=524288 count=1
-dd if=/tmp/eeproms of=/tmp/factory conv=notrunc
-dd if=/tmp/macs of=/tmp/factory bs=131072 seek=3 count=1
-
-echo "redundantly write bl2 into the first 4 blocks"
-for bl2start in 0x0 0x20000 0x40000 0x60000 ; do
+echo "redundantly write bl2"
+for bl2start in 0x0 0x80000 0x100000 0x180000; do
 	mtd -p $bl2start write $PRELOADER /dev/mtd0
 done
 
-install_prepare_ubi /dev/mtd1
+install_prepare_ubi /dev/mtd$(find_mtd_index "newubi")
 
 echo "write recovery ubi volume"
 RECOVERY_SIZE=$(cat $RECOVERY | wc -c)
@@ -176,6 +153,8 @@ ubimkvol /dev/ubi0 -n 5 -s 126976 -N fit
 install_write_backup
 
 sync
+
+led_green
 
 sleep 5
 
