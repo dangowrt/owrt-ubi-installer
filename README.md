@@ -57,8 +57,8 @@ You'll need the below to use the script to generate the installer image:
 * **IMPORTANT: Before downgrading, verify that the rejected upload was the correct, signed or unsigned, installer image to use for the currently running firmware version. (i.e. Maybe try uploading the 'other' installer image file first.)  Most rejected uploads are probably related to signed vs. unsigned image compatibility.**
 * **Note: It may not be possible to downgrade devices with "signed" stock firmware, i.e. versions >= 1.2.00.273012.**
 1. Download Stock Vendor Firmware
-   * For Linksys E8450 [FW_E8450_1.0.01.101415_prod.img] (https://downloads.linksys.com/support/assets/firmware/FW_E8450_1.0.01.101415_prod.img)
-   * For Belkin RT3200 [FW_RT3200_1.0.01.101415_prod.img] (https://s3.belkin.com/support/assets/belkin/firmware/FW_RT3200_1.0.01.101415_prod.img)
+   * For Linksys E8450 [FW_E8450_1.0.01.101415_prod.img](https://downloads.linksys.com/support/assets/firmware/FW_E8450_1.0.01.101415_prod.img)
+   * For Belkin RT3200 [FW_RT3200_1.0.01.101415_prod.img](https://s3.belkin.com/support/assets/belkin/firmware/FW_RT3200_1.0.01.101415_prod.img)
 2. Upload / install the Vendor 1.0.x Firmware (using the normal procedure)
 
 ## Backup stock/vendor bootchain
@@ -117,22 +117,23 @@ This keep user configuration but still allow restoring or upgrading from [ssh](h
 1. Boot into recovery mode, either by flashing `openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb` (note that this file doesn't have the word _installer_ in its filename) *or* by holding the RESET button while connecting the device to power *or* by issuing `echo c > /proc/sysrq-trigger` while running the production firmware. 
 2. Use **scp** or [WinSCP](https://winscp.net/eng/downloads.php) to copy the *mtdx* backup files to the `/tmp` folder on the router, which is the **original/vendor bootchain. Also upload the [**original/vendor firmware**](#downgrade-firmware).
 3. Connect to the device via SSH and enter the following commands:
-```
-ubidetach -d 0
-insmod mtd-rw i_want_a_brick=1
-mtd write /tmp/mtd0 /dev/mtd0
-mtd write /tmp/mtd1 /dev/mtd1
-mtd write /tmp/mtd2 /dev/mtd2
-mtd write /tmp/mtd3 /dev/mtd3
-```
-As the partition layout of the UBI-build also has changed, make sure to write things to the correct place in case your backup has been done at a point when the partition layout was different from what it is now.
+   ```
+   ubidetach -d 0
+   insmod mtd-rw i_want_a_brick=1
+   mtd write /tmp/mtd0 /dev/mtd0
+   mtd write /tmp/mtd1 /dev/mtd1
+   mtd write /tmp/mtd2 /dev/mtd2
+   mtd write /tmp/mtd3 /dev/mtd3
+   ```
+   As the partition layout of the UBI-build also has changed, make sure to write things to the correct place in case your backup has been done at a point when the partition layout was different from what it is now.
 
-Now write the **original/vendor firmware**:
-```
-# On Linksys E8450
-mtd -p 0x200000 write /tmp/FW_E8450_1.0.01.101415_prod.img /dev/mtd3
-
-# On Belkin RT3200
-mtd -p 0x200000 write /tmp/FW_RT3200_1.0.01.101415_prod.img /dev/mtd3
-```
+   Now write the **original/vendor firmware**:
+   ```
+   # On Linksys E8450
+   mtd -p 0x200000 write /tmp/FW_E8450_1.0.01.101415_prod.img /dev/mtd3
+   ```
+   ```
+   # On Belkin RT3200
+   mtd -p 0x200000 write /tmp/FW_RT3200_1.0.01.101415_prod.img /dev/mtd3
+   ```
 4. Reboot the device and wait about a minute for it to be ready.
