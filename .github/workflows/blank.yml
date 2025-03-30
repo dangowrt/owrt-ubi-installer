@@ -35,7 +35,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: images
-          path: "*.itb"
+          path: "*.[it][tr][bx]"
 
   release:
     if: inputs.no_release == '0'
@@ -55,4 +55,4 @@ jobs:
 
       # https://cli.github.com/manual/gh_release_upload
       - name: Upload assets
-        run: gh release upload ${{ inputs.tag || github.ref_name }} images/*.*i* --clobber
+        run: gh release upload ${{ inputs.tag || github.ref_name }} images/* --clobber
