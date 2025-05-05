@@ -174,7 +174,6 @@ allow_mtd_write() {
 	grep -v 'read-only' "${WORKDIR}/fdt-1.dts" > "${WORKDIR}/fdt-1.dts.patched"
 	grep -v 'linux,ubi' "${WORKDIR}/fdt-1.dts.patched" > "${WORKDIR}/fdt-1.dts.patched2"
 	mv "${WORKDIR}/fdt-1.dts.patched2" "${WORKDIR}/fdt-1.dts.patched"
-	sed -i 's/"ubi"/"newubi"/' "${WORKDIR}/fdt-1.dts.patched"
 	sed -i 's/"spi-nand"/"u-boot-dont-touch-spi-nand"/' "${WORKDIR}/fdt-1.dts.patched"
 	sed -i 's/partitions {/mtdparts: partitions {/' "${WORKDIR}/fdt-1.dts.patched"
 	cat >>"${WORKDIR}/fdt-1.dts.patched" <<EOF

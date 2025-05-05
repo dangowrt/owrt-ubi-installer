@@ -141,7 +141,7 @@ for bl2start in 0x0 0x80000 0x100000 0x180000; do
 	mtd -p $bl2start write $PRELOADER /dev/mtd0
 done
 
-install_prepare_ubi /dev/mtd$(find_mtd_index "newubi")
+install_prepare_ubi /dev/mtd$(find_mtd_index "UBI_DEV")
 
 echo "write recovery ubi volume"
 RECOVERY_SIZE=$(cat $RECOVERY | wc -c)
