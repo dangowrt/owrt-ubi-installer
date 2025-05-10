@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8...4.0)
 
 PROJECT(unfit C)
 ADD_DEFINITIONS(-ggdb --std=gnu99 -Wmissing-declarations)
